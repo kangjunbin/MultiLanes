@@ -1,0 +1,1067 @@
+/** 
+ * Copyright (C) 2013 Junbin Kang. All rights reserved.
+ */
+
+
+#include <linux/dcache.h>
+#include <linux/rculist.h>
+#include <linux/list.h>
+#include <linux/namei.h>
+#include <linux/dcache.h>
+#include <linux/fs.h>
+#include <linux/slab.h>
+#include <linux/module.h>
+#include <linux/security.h>
+
+#include "sfs_fs.h"
+
+static struct kmem_cache *sfs_dentry_cachep;
+
+
+int init_dentrycache(void)
+{
+	sfs_dentry_cachep = kmem_cache_create("sfs_dentry_cache",
+				sizeof(struct sfs_dentry),
+				0, (SLAB_RECLAIM_ACCOUNT|
+				SLAB_MEM_SPREAD),
+				NULL);
+	if(sfs_dentry_cachep == NULL)
+		return -ENOMEM;
+	return 0;
+}
+void destroy_dentrycache(void)
+{
+	rcu_barrier();
+	kmem_cache_destroy(sfs_dentry_cachep);
+
+}
+
+static inline void sfs_d_instantiate(struct dentry *dentry, struct inode *inode)
+{
+	d_instantiate(dentry, inode);
+}
+
+struct sfs_dentry *sfs_master_dentry_alloc(struct dentry *dentry)
+{
+	struct sfs_dentry *sfs_dentry;
+	sfs_dentry = kmem_cache_alloc(sfs_dentry_cachep, GFP_KERNEL);
+	if(!sfs_dentry)
+		return ERR_PTR(-ENOMEM);
+
+	dentry->d_fsdata = sfs_dentry;
+	sfs_dentry->dentry = dentry;
+
+	atomic_set(&sfs_dentry->u.m.replica_count, 0);
+	spin_lock_init(&sfs_dentry->u.m.lock);
+	INIT_LIST_HEAD(&sfs_dentry->u.m.replicas);
+
+	return sfs_dentry;
+}
+
+struct sfs_dentry *sfs_replica_dentry_alloc(struct dentry *dentry)
+{
+	struct sfs_dentry *sfs_dentry;
+	
+	sfs_dentry = kmem_cache_alloc(sfs_dentry_cachep, GFP_KERNEL);
+	if(!sfs_dentry)
+		return ERR_PTR(-ENOMEM);
+
+	sfs_dentry->dentry = dentry;
+	INIT_LIST_HEAD(&sfs_dentry->u.r.replica_list);
+
+	return sfs_dentry;
+}
+
+
+void d_add_replica(struct sfs_dentry *sfs_master, struct sfs_dentry *sfs_replica,
+	unsigned int replica_id)
+{
+	d_lock(sfs_master);
+	list_add_tail(&sfs_replica->u.r.replica_list,&sfs_master->u.m.replicas);
+	d_unlock(sfs_master);
+
+	atomic_inc(&sfs_master->u.m.replica_count);
+	sfs_replica->u.r.master = sfs_master;
+	sfs_replica->replica_id = replica_id;	
+}
+
+static int sfs_new_entry(struct dentry *new_master, struct dentry *new_replica,
+	unsigned int replica_id)
+{
+	int error = 0;
+	struct inode *inode;
+ 	struct sfs_dentry *sfs_dentry, *sfs_replica_dentry;
+
+	sfs_dentry = sfs_master_dentry_alloc(new_master);
+	if(unlikely(IS_ERR(sfs_dentry))){
+		error = PTR_ERR(sfs_dentry);
+		printk(KERN_INFO "sfs add new entry failed: master dentry alloc error\n");
+		goto out;
+	}
+
+
+	sfs_replica_dentry = sfs_replica_dentry_alloc(new_replica);
+	if(unlikely(IS_ERR(sfs_replica_dentry))){
+		error = PTR_ERR(sfs_replica_dentry);
+
+		printk(KERN_INFO "sfs add new entry failed: replica dentry alloc error\n");
+		goto out;
+	}
+
+	d_add_replica(sfs_dentry, sfs_replica_dentry, replica_id);
+	inode = sfs_new_inode(new_master);
+	if(unlikely(IS_ERR(inode))){
+		
+		error = PTR_ERR(inode);
+		goto out;
+	}
+
+	sfs_d_instantiate(new_master, inode);
+
+		
+out:
+	return error;
+}
+static struct dentry *sfs_lookup(struct inode *dir, struct dentry *dentry, unsigned int flags)
+{
+	
+	int found = 0, err, replica_id;
+	struct dentry *parent, *replica_parent, *new, *old, *ret;
+	struct sfs_dentry *sfs_parent, *sfs_replica_parent, 
+		*sfs_dentry, *sfs_replica_dentry;
+	struct inode *inode = NULL, *base;
+
+	parent = dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+
+	/** 
+	 * The replica dentry list is already protected by the mutex of the inode.
+	 * The concurrent appending operations may happen only when cloning a branch from
+	 * the other fs, hence the deleting operations will not happen. 
+	 */
+
+	d_lock(sfs_parent);
+	list_for_each_replica(sfs_parent, sfs_replica_parent){
+		d_unlock(sfs_parent);
+		replica_parent = sfs_replica_parent->dentry;
+		base = replica_parent->d_inode;
+	
+		/**
+		 * We learn from lookup_real function implementation in linux/fs/namei.c 
+		 */
+		new = d_alloc(replica_parent, &dentry->d_name);
+		if(unlikely(IS_DEADDIR(base))){
+			ret = ERR_PTR(-ENOENT);
+			goto out2;
+		}
+
+		/** 
+		 * We have been nested in vfs lookup with i_mutex holding
+		 */
+		mutex_lock_nested(&base->i_mutex,I_MUTEX_OTHER_NORMAL);
+		old = base->i_op->lookup(base, new, flags);
+		mutex_unlock(&base->i_mutex);
+
+		if(unlikely(old)){
+			dput(new);
+			new = old;
+		}
+
+		/* if it is not a negative dentry, we found one */
+		if(new->d_inode){
+			replica_id = sfs_replica_parent->replica_id;
+
+			if(!found){
+		//		printk(KERN_INFO "look up found %s\n", new->d_name.name);
+				found = 1;
+				sfs_dentry = sfs_master_dentry_alloc(dentry);
+				if(unlikely(IS_ERR(sfs_dentry))){
+					ret = (void *)sfs_dentry;
+					dput(new);
+					goto out2;
+				}
+
+			}
+
+			sfs_replica_dentry = sfs_replica_dentry_alloc(new);
+			if(unlikely(IS_ERR(sfs_replica_dentry))){
+				dput(new);
+				ret = (void *)sfs_replica_dentry;
+				goto out2;
+			}
+
+			sfs_dentry = SFS_D(dentry);	
+			d_add_replica(sfs_dentry, sfs_replica_dentry, 
+				sfs_replica_parent->replica_id);
+		
+			if(!S_ISDIR(new->d_inode->i_mode))
+				goto out1;
+
+		}
+		
+		d_lock(sfs_parent);
+	}
+	d_unlock(sfs_parent);
+
+out1:
+	if(found)
+		inode = sfs_new_inode(dentry);	
+out2:
+	
+	ret = d_splice_alias(inode, dentry);
+	return ret;
+}
+
+struct sfs_dentry *find_replica_dentry(struct sfs_dentry *sfs_dentry, unsigned int replica_id)
+{
+	struct sfs_dentry *sfs_replica_dentry, *found = NULL;
+
+	d_lock(sfs_dentry);
+	list_for_each_replica(sfs_dentry, sfs_replica_dentry){
+		d_unlock(sfs_dentry);
+
+		if(sfs_replica_dentry->replica_id == replica_id){
+			found = sfs_replica_dentry;
+				goto out;
+		}
+		
+		d_lock(sfs_dentry);
+	}
+	d_unlock(sfs_dentry);
+out:
+	return found;
+}
+
+
+/**
+ * sfs_clone_branch: create a tree branch in the replica fs
+ * @sfs_dentry: The leaf of the tree branch in sfs 
+ * @replica_id: The replica id of the replica fs to which a branch will be cloned
+ *
+ * we traverse and record the path from current dentry to the root dentry 
+ * and create the same path in the special replica fs.
+ */
+
+
+struct sfs_dentry *sfs_clone_branch(struct sfs_dentry *sfs_dentry, unsigned int replica_id)
+{
+	struct path_node {
+		struct list_head list;
+		struct sfs_dentry *sfs_dentry;
+	};
+	int err;
+	struct list_head path_list;
+	struct dentry *tmp, *replica_dentry,*new = NULL;
+	struct sfs_dentry *sfs_replica_dentry, *found;
+	struct path_node *node, *next;
+	struct inode *dir;
+
+	INIT_LIST_HEAD(&path_list);
+
+	tmp = sfs_dentry->dentry;
+	for(;;tmp = tmp->d_parent){
+		node = kmalloc(sizeof(struct path_node),GFP_KERNEL);
+		if(unlikely(!node)){
+			sfs_replica_dentry = ERR_PTR(-ENOMEM);
+			goto out;
+		}
+		sfs_dentry = SFS_D(tmp);
+		if((found = find_replica_dentry(sfs_dentry,replica_id)) != NULL) 
+			break;
+		
+		INIT_LIST_HEAD(&node->list);
+		node->sfs_dentry = sfs_dentry;
+		list_add(&node->list, &path_list);
+
+		if(tmp == tmp->d_sb->s_root)
+			break;
+	}
+	
+	if(unlikely(!found)){
+		sfs_replica_dentry = ERR_PTR(-EIO);
+		goto out;
+	}
+	
+	sfs_replica_dentry = found;
+	list_for_each_entry(node, &path_list, list){
+
+		replica_dentry = sfs_replica_dentry->dentry;
+		new = d_alloc(replica_dentry, &node->sfs_dentry->dentry->d_name);
+		dir = replica_dentry->d_inode;
+
+		mutex_lock_nested(&dir->i_mutex, I_MUTEX_OTHER_NORMAL);
+		err = dir->i_op->mkdir(dir, new, 
+			node->sfs_dentry->dentry->d_inode->i_mode);
+		mutex_unlock(&dir->i_mutex);
+
+		if(!err && new->d_inode){
+			sfs_replica_dentry = sfs_replica_dentry_alloc(new);
+			if(unlikely(IS_ERR(sfs_replica_dentry))){
+				dput(new);
+				new = (void *)sfs_replica_dentry;
+				goto out;
+			}
+			
+			d_add_replica(node->sfs_dentry, sfs_replica_dentry, 
+				replica_id);
+
+		}
+		else {
+			dput(new);
+			new = ERR_PTR(err);
+			goto out;
+		}		
+	}
+out:
+	list_for_each_entry_safe(node, next, &path_list, list){
+		list_del(&node->list);
+		kfree(node);
+	}
+	return sfs_replica_dentry;
+}
+
+
+/**
+ * add new entries (regular files, directories, symlinks, and device nodes) to the sfs
+ */
+
+
+
+enum op_type{
+	Creat,
+	Mkdir,
+	Symlink,
+	Mknod
+};
+
+struct add_arg {
+	enum op_type type;
+	union {
+		struct {
+			umode_t mode;
+			bool excl;
+		}creat;
+		struct {
+			const char *oldname;
+		}symlink;
+		struct {
+			umode_t mode;
+			dev_t dev;
+		}mknod;
+		struct {
+			umode_t mode;
+		}mkdir;
+	}u;
+};
+
+static int sfs_add_dir_entry(struct inode *dir, struct dentry *dentry, umode_t mode)
+{
+	int err = 0, first = 1;
+	struct dentry *parent, *replica_parent, *new;
+	struct sfs_dentry *sfs_parent, *sfs_replica_parent, *sfs_dentry, *sfs_replica_dentry;
+	struct inode *replica_dir;
+	unsigned int replica_id;
+
+	parent = dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+	d_lock(sfs_parent);
+	list_for_each_replica(sfs_parent, sfs_replica_parent){
+		d_unlock(sfs_parent);
+		replica_parent = sfs_replica_parent->dentry;
+		
+		new = d_alloc(replica_parent, &dentry->d_name);
+		if(unlikely(!new)){
+			err = -ENOMEM;
+			goto out;
+		}
+		
+		replica_dir = replica_parent->d_inode;
+
+		mutex_lock_nested(&replica_dir->i_mutex, I_MUTEX_OTHER_NORMAL);
+		err = vfs_mkdir(replica_dir, new, mode);
+		mutex_unlock(&replica_dir->i_mutex);
+		
+		
+		if(likely(!err && new->d_inode)){
+			replica_id = sfs_replica_parent->replica_id;
+			if(first){
+				first = 0;
+				err = sfs_new_entry(dentry, new, replica_id);
+				if(unlikely(err)){
+					dput(new);
+					printk(KERN_INFO "sfs_add_dir_entry: alloc new entry failed\n");
+				}
+		
+			}else {
+
+				sfs_replica_dentry = sfs_replica_dentry_alloc(new);
+				if(unlikely(IS_ERR(sfs_replica_dentry))){
+					dput(new);
+					err = PTR_ERR(sfs_replica_dentry);
+					goto out;
+				}
+
+				sfs_dentry = SFS_D(dentry);	
+				d_add_replica(sfs_dentry, sfs_replica_dentry, replica_id);
+			}			
+
+		}else 
+			dput(new);
+		
+		d_lock(sfs_parent);
+	}
+	d_unlock(sfs_parent);
+out:
+	if(likely(!first))
+		err = 0;
+
+	return err;
+}
+
+	
+static int sfs_add_entry(struct inode *dir, struct dentry *dentry, struct add_arg *arg)
+{
+	int err = 0;
+	struct dentry *parent, *replica_parent, *new;
+	struct sfs_dentry *sfs_parent, *sfs_replica_parent;
+	struct inode *replica_dir;
+	cpumask_t saved_mask;
+	unsigned int replica_id, dest_cpu = -1;
+
+	parent = dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+	replica_id = find_locality();
+	bind_on_update(replica_id, &saved_mask, &dest_cpu);
+
+	if(!(sfs_replica_parent = find_replica_dentry(sfs_parent, replica_id)))
+		sfs_replica_parent = sfs_clone_branch(sfs_parent, replica_id);
+
+	if(unlikely(IS_ERR(sfs_replica_parent))){
+		err = PTR_ERR(sfs_replica_parent);
+		printk(KERN_INFO "sfs_add entry: create branch error %d\n",err);
+		goto out;
+	}
+
+	replica_parent = sfs_replica_parent->dentry;
+	new = d_alloc(replica_parent, &dentry->d_name);
+	if(unlikely(!new)){
+		err = -ENOMEM;
+		printk(KERN_INFO "sfs_add_entry: ENOMEM\n");
+		goto out;
+	}
+	
+	replica_dir = replica_parent->d_inode;
+	mutex_lock_nested(&replica_dir->i_mutex, I_MUTEX_OTHER_NORMAL);
+
+	switch(arg->type){
+	case Creat:
+		if(!replica_dir->i_op->create){
+			err = -EACCES;
+			break;
+		}
+	
+//		err = replica_dir->i_op->create(replica_dir, new, arg->u.creat.mode, 
+		//					arg->u.creat.excl);
+		err = vfs_create(replica_dir, new, arg->u.creat.mode, arg->u.creat.excl);
+		if(new->d_inode == NULL)
+			printk(KERN_INFO "sfs_create null\n");
+		break;
+	case Mkdir:
+		if(!replica_dir->i_op->mkdir){
+			err = -EACCES;
+			break;
+		}
+	
+//		err = replica_dir->i_op->mkdir(replica_dir, new, arg->u.mkdir.mode);
+		err = vfs_mkdir(replica_dir, new, arg->u.mkdir.mode);
+		if(new->d_inode == NULL)
+			printk(KERN_INFO "sfs_mkdir null\n");
+
+		break;
+	case Symlink:
+		if(!replica_dir->i_op->symlink){
+			err = -EACCES;
+			break;
+		}
+		err = vfs_symlink(replica_dir, new, arg->u.symlink.oldname);	
+//		err = replica_dir->i_op->symlink(replica_dir, new, arg->u.symlink.oldname);
+		break;
+	case Mknod:
+		if(!replica_dir->i_op->mknod){
+			err = -EACCES;
+			break;
+		}
+		err = vfs_mknod(replica_dir, new, arg->u.mknod.mode, arg->u.mknod.dev);
+//		err = replica_dir->i_op->mknod(replica_dir, new, arg->u.mknod.mode, arg->u.mknod.dev);
+		break;
+	}
+	mutex_unlock(&replica_dir->i_mutex);
+
+	if(likely(!err)){
+		err = sfs_new_entry(dentry, new, replica_id);
+		if(unlikely(err)){
+			dput(new);
+			printk(KERN_INFO "sfs_add_entry: alloc new entry failed\n");
+		}
+
+	}else 
+		dput(new);
+out:
+	finish_update(replica_id, &saved_mask, dest_cpu);
+	return err;
+}
+
+static int sfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+		bool excl)
+{
+	struct add_arg arg ={
+		.type = Creat,
+		.u.creat = {
+			.mode	= mode,
+			.excl	= excl
+		}
+	};
+	return sfs_add_entry(dir, dentry, &arg);	
+}
+
+static int sfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
+{
+	struct add_arg arg ={
+		.type = Mkdir,
+		.u.mkdir = {
+			.mode	= mode
+		}
+	};
+	return sfs_add_dir_entry(dir, dentry, mode);	
+}
+
+static int sfs_symlink(struct inode *dir, struct dentry *dentry, const char *oldname)
+{
+	struct add_arg arg ={
+		.type = Symlink,
+		.u.symlink = {
+			.oldname = oldname
+		}
+	};
+	return sfs_add_entry(dir, dentry, &arg);	
+}
+
+static int sfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
+	dev_t rdev)
+{
+	struct add_arg arg ={
+		.type = Mknod,
+		.u.mknod = {
+			.mode	= mode,
+			.dev	= rdev
+		}
+	};
+	return sfs_add_entry(dir, dentry, &arg);	
+}
+
+static int sfs_rmdir(struct inode *dir, struct dentry *dentry)
+{
+	int error = -ENOENT;
+	struct dentry *parent, *replica_parent, *replica_dentry;
+	struct sfs_dentry *sfs_parent, *sfs_replica_parent,*sfs_dentry, *sfs_replica_dentry, *next;
+	struct inode *replica_dir;
+	
+	parent = dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+	sfs_dentry = SFS_D(dentry);
+
+	d_lock(sfs_dentry);
+	list_for_each_replica_safe(sfs_dentry, sfs_replica_dentry, next){
+		d_unlock(sfs_dentry);
+
+		sfs_replica_parent = find_replica_dentry(sfs_parent, sfs_replica_dentry->replica_id);
+		if(unlikely(!sfs_replica_parent)){
+			error = -EIO;
+			goto out;
+		}
+
+		/** 
+		 * Considering the fact that rmdir is a non-critical performance operation, 
+		 * we do not migrate the update thread to the proper core to avoid unnecessary 
+		 * migrating overhead.
+		 */
+
+		replica_parent = sfs_replica_parent->dentry;
+		replica_dentry = sfs_replica_dentry->dentry;
+		replica_dir = replica_parent->d_inode;
+
+		mutex_lock_nested(&replica_dir->i_mutex, I_MUTEX_OTHER_PARENT);
+		mutex_lock_nested(&replica_dentry->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+		error = replica_dir->i_op->rmdir(replica_dir, replica_dentry);
+		mutex_unlock(&replica_dentry->d_inode->i_mutex);
+		mutex_unlock(&replica_dir->i_mutex);
+
+		/**
+		 * Delete the replica dentry.
+		 * Error happening will not leave the file system in a inconsistent state because only empty entries are removed.
+		 */
+		if(!error){
+			replica_dentry->d_inode->i_flags |= S_DEAD;
+			dont_mount(replica_dentry);
+				
+			list_del_replica_dentry(sfs_replica_dentry);
+			dput(replica_dentry);
+			d_delete(replica_dentry);
+		}else 
+			goto out;
+
+		d_lock(sfs_dentry);	
+	}
+	d_unlock(sfs_dentry);
+
+out:
+	return error;
+
+}
+
+static int sfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_dentry)
+{
+	int err;
+	struct dentry *parent, *replica_parent, *old_replica_dentry, *new;
+	struct sfs_dentry *sfs_old_dentry, *sfs_old_replica_dentry,
+		*sfs_replica_parent, *sfs_parent;
+	struct inode *replica_dir;
+	cpumask_t saved_mask;
+	unsigned int replica_id, dest_cpu = -1;
+
+	sfs_old_dentry = SFS_D(old_dentry);
+	sfs_old_replica_dentry = list_first_replica_dentry(sfs_old_dentry);
+	old_replica_dentry = sfs_old_replica_dentry->dentry;
+
+	parent = old_dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+	replica_id = sfs_old_replica_dentry->replica_id;
+
+	migrate_on_update(replica_id, &saved_mask, &dest_cpu);
+	if((sfs_replica_parent = find_replica_dentry(sfs_parent, replica_id)) == NULL)
+		sfs_replica_parent = sfs_clone_branch(sfs_parent, replica_id);
+
+	if(unlikely(IS_ERR(sfs_replica_parent))){
+		err = PTR_ERR(sfs_replica_parent);
+		goto out;
+	}
+	
+	replica_parent = sfs_replica_parent->dentry;
+	new = d_alloc(replica_parent, &new_dentry->d_name);
+	replica_dir = replica_parent->d_inode;
+
+	mutex_lock_nested(&replica_dir->i_mutex, I_MUTEX_OTHER_PARENT);
+	mutex_lock_nested(&old_replica_dentry->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+	err = replica_dir->i_op->link(old_replica_dentry, replica_dir, new);
+	mutex_unlock(&old_replica_dentry->d_inode->i_mutex);
+	mutex_unlock(&replica_dir->i_mutex);
+
+
+	if(likely(!err)){
+		err = sfs_new_entry(new_dentry, new, replica_id);
+		if(unlikely(err)){
+			dput(new);
+			goto out;
+		}
+	}else 
+		dput(new);
+
+out:
+	finish_update(replica_id, &saved_mask, dest_cpu);
+	return err;
+}
+
+static int sfs_unlink(struct inode *dir, struct dentry *dentry)
+{
+	int error;
+	struct dentry *parent, *replica_parent, *replica_dentry;
+	struct sfs_dentry *sfs_dentry, *sfs_replica_dentry,
+		*sfs_parent, *sfs_replica_parent;
+	struct inode *replica_dir;
+	cpumask_t saved_mask;
+	unsigned int replica_id, dest_cpu = -1;
+
+	sfs_dentry = SFS_D(dentry);
+	sfs_replica_dentry = list_first_replica_dentry(sfs_dentry);
+	parent = dentry->d_parent;
+	sfs_parent = SFS_D(parent);
+	replica_id = sfs_replica_dentry->replica_id;
+	sfs_replica_parent = find_replica_dentry(sfs_parent, replica_id);
+	if(unlikely(!sfs_replica_parent))
+		return -EIO;
+
+	replica_parent = sfs_replica_parent->dentry;
+	replica_dentry = sfs_replica_dentry->dentry;
+
+	migrate_on_update(replica_id, &saved_mask, &dest_cpu);
+	replica_dir = replica_parent->d_inode;
+
+	mutex_lock_nested(&replica_dir->i_mutex, I_MUTEX_OTHER_PARENT);
+	mutex_lock_nested(&replica_dentry->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+	error = replica_dir->i_op->unlink(replica_dir, replica_dentry);
+	mutex_unlock(&replica_dentry->d_inode->i_mutex);
+	mutex_unlock(&replica_dir->i_mutex);
+
+	if(!error){
+		list_del_replica_dentry(sfs_replica_dentry);
+		dont_mount(replica_dentry);
+		dput(replica_dentry);
+	}
+	
+	finish_update(replica_id, &saved_mask, dest_cpu);
+	return error;
+}
+
+struct dentry *d_ancestor(struct dentry *p1, struct dentry *p2)
+{
+	struct dentry *p;
+
+	for(p = p2; !IS_ROOT(p); p = p->d_parent) {
+		if(p->d_parent == p1)
+			return p;
+	}
+	return NULL;
+}
+
+struct dentry *sfs_lock_rename(struct dentry *p1, struct dentry *p2)
+{
+	struct dentry *p;
+
+	if (p1 == p2) {
+		mutex_lock_nested(&p1->d_inode->i_mutex, I_MUTEX_OTHER_PARENT);
+		return NULL;
+	}
+
+	mutex_lock_nested(&p1->d_inode->i_sb->s_vfs_rename_mutex, S_RENAME_SFS);
+
+	p = d_ancestor(p2, p1);
+	if (p) {
+		mutex_lock_nested(&p2->d_inode->i_mutex, I_MUTEX_OTHER_PARENT);
+		mutex_lock_nested(&p1->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+		return p;
+	}
+
+	p = d_ancestor(p1, p2);
+	if (p) {
+		mutex_lock_nested(&p1->d_inode->i_mutex, I_MUTEX_OTHER_PARENT);
+		mutex_lock_nested(&p2->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+		return p;
+	}
+
+	mutex_lock_nested(&p1->d_inode->i_mutex, I_MUTEX_OTHER_PARENT);
+	mutex_lock_nested(&p2->d_inode->i_mutex, I_MUTEX_OTHER_CHILD);
+	return NULL;
+}
+
+void sfs_unlock_rename(struct dentry *p1, struct dentry *p2)
+{
+	mutex_unlock(&p1->d_inode->i_mutex);
+	if (p1 != p2) {
+		mutex_unlock(&p2->d_inode->i_mutex);
+		mutex_unlock(&p1->d_inode->i_sb->s_vfs_rename_mutex);
+	}
+}
+
+static int sfs_rename_dir(struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry)
+{
+	int error = 0, is_exist = 0, first = 1, replica_id;
+	struct dentry *old_parent, *new_parent,
+		*old_replica_parent, *new_replica_parent, 
+		*old_replica_dentry, *new_replica_dentry;
+
+	struct sfs_dentry *sfs_old_dentry, *sfs_old_replica_dentry,
+			*sfs_old_parent, *sfs_old_replica_parent,
+			*sfs_new_parent, *sfs_new_replica_parent,
+			*sfs_new_replica_dentry;
+
+	/**
+	 * A dir can't be renamed to a existed non-emptry dir. 
+	 * We first remove the new dentry, if failed, the result may indicate that the new dentry is a non-empty dir. 
+	 * This failed operation does not harm the consistent view of sfs as only empty replica dires are removed 
+	 * and non-empty dires are left.
+	 */
+	if(new_dentry->d_inode){
+		is_exist = 1;
+		error = sfs_rmdir(new_dir, new_dentry);
+		printk(KERN_INFO "rename rmdir %s %d\n",new_dentry->d_name.name, error);
+		if(error)
+			goto exit;
+	}
+
+	old_parent = old_dentry->d_parent;
+	new_parent = new_dentry->d_parent;
+	sfs_old_parent = SFS_D(old_parent);
+	sfs_new_parent = SFS_D(new_parent);
+	sfs_old_parent = SFS_D(old_parent);
+	sfs_old_dentry = SFS_D(old_dentry);
+
+	d_lock(sfs_old_dentry);
+	list_for_each_replica(sfs_old_dentry, sfs_old_replica_dentry){
+		d_unlock(sfs_old_dentry);
+
+		replica_id = sfs_old_replica_dentry->replica_id;
+		old_replica_dentry = sfs_old_replica_dentry->dentry;
+		sfs_old_replica_parent = find_replica_dentry(sfs_old_parent, replica_id);
+
+		if(unlikely(!sfs_old_replica_parent)){
+			error = -EIO;
+			goto exit;
+		}
+		
+		old_replica_parent = sfs_old_replica_parent->dentry;
+		/**
+		 * As the directory rename is a non-crtical performance operation, we do not migrate the update thread.
+		 */
+		if(!(sfs_new_replica_parent = find_replica_dentry(sfs_new_parent, replica_id)))
+			sfs_new_replica_parent = sfs_clone_branch(sfs_new_parent, replica_id);
+		if(unlikely(IS_ERR(sfs_new_replica_parent))){
+			error = PTR_ERR(sfs_new_replica_parent);
+			goto exit;
+		}
+		
+		new_replica_parent = sfs_new_replica_parent->dentry;
+		new_replica_dentry = d_alloc(new_replica_parent, &new_dentry->d_name);
+		if(unlikely(!new_replica_dentry)){
+			error = -ENOMEM;
+			goto exit;
+		}
+		
+		sfs_lock_rename(new_replica_parent, old_replica_parent);
+
+		error = old_replica_parent->d_inode->i_op->rename(old_replica_parent->d_inode, old_replica_dentry, 
+							new_replica_parent->d_inode, new_replica_dentry);
+
+		sfs_unlock_rename(new_replica_parent, old_replica_parent);
+		/**
+		 * Error may harm the consistent view of sfs as operations are partially handled among all replicas.
+		 * How to solve this problem?
+		 */
+		if(likely(!error)){
+			if(!is_exist && first){
+				first = 0;
+				error = sfs_new_entry(new_dentry, new_replica_dentry, replica_id);
+				if(unlikely(error)){
+					dput(new_replica_dentry);
+					goto exit;
+				}
+			}else {
+
+				sfs_new_replica_dentry = sfs_replica_dentry_alloc(new_replica_dentry);
+				if(unlikely(IS_ERR(sfs_new_replica_dentry))){
+					error = PTR_ERR(sfs_new_replica_dentry);
+					dput(new_replica_dentry);
+					goto exit;
+				}
+			}
+
+			if(!(old_replica_parent->d_inode->i_sb->s_type->fs_flags & FS_RENAME_DOES_D_MOVE))
+				d_move(old_replica_dentry, new_replica_dentry);
+		}else 
+			dput(new_replica_dentry);
+
+		d_lock(sfs_old_dentry);
+	}
+	d_unlock(sfs_old_dentry);
+exit:
+	return error;		
+
+}
+
+static int sfs_rename_other(struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry)
+{
+	int error = 0, is_exist = 0, needed_unlink = 0;
+	struct dentry *old_parent, *new_parent,
+			*old_replica_parent, *new_replica_parent, 
+			*old_replica_dentry, *new_replica_dentry,
+			*dead_replica_dentry, *dead_replica_parent;
+
+	struct sfs_dentry *sfs_old_parent, *sfs_new_parent, 
+				*sfs_new_dentry, *sfs_old_dentry, 
+				*sfs_old_replica_parent, *sfs_new_replica_parent, 
+				*sfs_new_replica_dentry, *sfs_old_replica_dentry,
+				*sfs_dead_replica_dentry = NULL, *sfs_dead_replica_parent = NULL;
+
+	struct inode *target = NULL;
+	cpumask_t saved_mask, tmp_mask;
+	unsigned int replica_id, dest_cpu = -1, tmp_cpu = -1;
+
+	old_parent = old_dentry->d_parent;
+	new_parent = new_dentry->d_parent;
+	sfs_new_parent = SFS_D(new_parent);
+	sfs_old_parent = SFS_D(old_parent);
+
+	sfs_new_dentry = SFS_D(new_dentry);
+	sfs_old_dentry = SFS_D(old_dentry);
+
+	sfs_old_replica_dentry = list_first_replica_dentry(sfs_old_dentry);
+	old_replica_dentry = sfs_old_replica_dentry->dentry;
+	replica_id = sfs_old_replica_dentry->replica_id;
+	
+	old_replica_parent = old_replica_dentry->d_parent;
+
+	
+
+	if(new_dentry->d_inode)
+		is_exist = 1;
+
+	migrate_on_update(replica_id, &saved_mask, &dest_cpu);
+
+	if(!(sfs_new_replica_parent = find_replica_dentry(sfs_new_parent, replica_id)))
+		sfs_new_replica_parent = sfs_clone_branch(sfs_new_parent, replica_id);
+
+	if(unlikely(IS_ERR(sfs_new_replica_parent))){
+		error = PTR_ERR(sfs_new_replica_parent);
+		goto exit1;
+	}
+	
+	new_replica_parent = sfs_new_replica_parent->dentry;
+	old_replica_parent = sfs_old_replica_parent->dentry;
+	sfs_lock_rename(new_replica_parent, old_replica_parent);
+
+	if(is_exist){
+
+		sfs_new_replica_dentry = list_first_replica_dentry(sfs_new_dentry);
+		new_replica_dentry = sfs_new_replica_dentry->dentry;
+		target = new_replica_dentry->d_inode;
+		if(target)
+			mutex_lock_nested(&target->i_mutex, I_MUTEX_OTHER_NORMAL);
+		/**
+		 * We need remove the new_dentry which does not lie in the same fs with old_dentry
+		 */
+		if(sfs_new_replica_dentry->replica_id != sfs_old_replica_dentry->replica_id){
+			needed_unlink = 1;
+			sfs_dead_replica_dentry = sfs_new_replica_dentry;
+			dead_replica_dentry = sfs_dead_replica_dentry->dentry;
+
+			new_replica_dentry = d_alloc(new_replica_parent, &new_dentry->d_name);
+			if(unlikely(!new_replica_dentry)){
+				error = -ENOMEM;
+				goto exit2;
+			}
+		}
+	
+	}else{ 
+		new_replica_dentry = d_alloc(new_replica_parent, &new_dentry->d_name);
+		if(unlikely(!new_replica_dentry)){
+			error = -ENOMEM;
+			goto exit2;
+		}
+	}
+
+
+	error = old_replica_parent->d_inode->i_op->rename(old_replica_parent->d_inode, old_replica_dentry, 
+						new_replica_parent->d_inode, new_replica_dentry);
+	
+	if(error){
+		/**
+		 *  if any error occurs, new allocated dentry should be put
+		 */
+		if(!is_exist || needed_unlink)
+			dput(new_replica_dentry);
+
+		goto exit2;
+	}	
+/*
+	if(new_replica_dentry->d_inode == NULL)
+		printk(KERN_INFO "new replica inode is null %s\n", new_replica_dentry->d_name.name);
+*/
+	if(target){
+
+		if(needed_unlink)
+			dont_mount(dead_replica_dentry);
+		else 
+			dont_mount(new_replica_dentry);
+	}
+
+	/**
+	 * New replica dentry should be initialized and added to the replica list of the new dentry 
+	 * only when the inode of new dentry does not existed or should be removed as belonging to a
+	 * different fs from the inode of old dentry.
+	 */
+	if(needed_unlink && sfs_dead_replica_dentry){
+		sfs_dead_replica_parent = find_replica_dentry(sfs_new_parent, sfs_dead_replica_dentry->replica_id);
+		if(unlikely(!sfs_dead_replica_parent)){
+			error = -EIO;
+			goto exit2;
+		}
+		dead_replica_parent = sfs_dead_replica_parent->dentry;
+
+		migrate_on_update(sfs_dead_replica_dentry->replica_id, &tmp_mask, &tmp_cpu);
+		error = dead_replica_parent->d_inode->i_op->unlink(dead_replica_parent->d_inode, dead_replica_dentry);
+		finish_update(sfs_dead_replica_dentry->replica_id, &saved_mask, tmp_cpu);
+		/**
+		 * Error may harm the consistent view of sfs as the replica dentry is not successfully removed as excepted.
+		 */
+		
+		if(unlikely(error)){
+			printk(KERN_INFO "rename unlink error %d\n",error);
+			dput(new_replica_dentry);
+			goto exit2;
+		}
+
+		list_del_replica_dentry(sfs_dead_replica_dentry);
+		dput(dead_replica_dentry);
+		
+		sfs_new_replica_dentry = sfs_replica_dentry_alloc(new_replica_dentry);
+		if(unlikely(IS_ERR(sfs_new_replica_dentry))){
+			dput(new_replica_dentry);
+			goto exit2;
+		}
+			
+		d_add_replica(sfs_new_dentry, sfs_new_replica_dentry, replica_id);
+
+	}
+
+	if(!is_exist){
+		error = sfs_new_entry(new_dentry, new_replica_dentry, replica_id);
+		if(unlikely(error)){
+			dput(new_replica_dentry);
+			goto exit2;
+		}
+	}
+
+	if(!(old_replica_parent->d_inode->i_sb->s_type->fs_flags & FS_RENAME_DOES_D_MOVE))
+		d_move(old_replica_dentry, new_replica_dentry);
+	
+
+exit2:
+	if(target)
+		mutex_unlock(&target->i_mutex);
+
+	sfs_unlock_rename(new_replica_parent, old_replica_parent);
+	finish_update(replica_id, &saved_mask, dest_cpu);
+exit1:
+	return error;		
+}
+
+static int sfs_rename(struct inode *old_dir, struct dentry *old_dentry, 
+		struct inode *new_dir, struct dentry *new_dentry)
+{
+	int error = 0;
+	int is_dir = S_ISDIR(old_dentry->d_inode->i_mode);
+	if(is_dir)
+		error = sfs_rename_dir(old_dir, old_dentry, new_dir, new_dentry);
+	else 
+		error = sfs_rename_other(old_dir, old_dentry, new_dir, new_dentry);
+
+	return error;
+}
+
+
+const struct inode_operations sfs_dir_inode_operations = {
+	.create		= sfs_create,
+	.lookup		= sfs_lookup,
+	.link		= sfs_link,
+	.unlink		= sfs_unlink,
+	.symlink	= sfs_symlink,
+	.mkdir		= sfs_mkdir,
+	.rmdir		= sfs_rmdir,
+	.mknod		= sfs_mknod,
+	.rename		= sfs_rename,
+	.setattr	= sfs_setattr,
+	.fiemap		= sfs_fiemap,
+};
+
+

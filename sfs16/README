@@ -1,0 +1,5 @@
+Improvements:
+- We intend to leverage extend attributes/xattr of existing file systems to identify normal directories
+  and to partition files.
+- The code is prepared for ATC 2014/OSDI 2014
+

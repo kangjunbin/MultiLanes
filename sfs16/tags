@@ -1,0 +1,326 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AVARAGE_DIR_LEN	dir.h	5;"	d
+CLONE_NORMAL	sfs_fs.h	30;"	d
+CLONE_SHADOW	sfs_fs.h	31;"	d
+CONCURRENCY_THRESHOLD	sfs_fs.h	22;"	d
+Creat	namei.c	/^	Creat,$/;"	e	enum:op_type	file:
+DIR_INFO	dir.h	/^static inline struct dir_info *DIR_INFO(struct sfs_file *sfs_file)$/;"	f
+HIDDEN	kv.h	6;"	d
+I_MUTEX_OTHER_BEGIN	sfs_fs.h	/^	I_MUTEX_OTHER_BEGIN = I_MUTEX_QUOTA,$/;"	e	enum:__anon4
+I_MUTEX_OTHER_CHILD	sfs_fs.h	/^	I_MUTEX_OTHER_CHILD,$/;"	e	enum:__anon4
+I_MUTEX_OTHER_END	sfs_fs.h	/^	I_MUTEX_OTHER_END$/;"	e	enum:__anon4
+I_MUTEX_OTHER_NORMAL	sfs_fs.h	/^	I_MUTEX_OTHER_NORMAL,$/;"	e	enum:__anon4
+I_MUTEX_OTHER_PARENT	sfs_fs.h	/^	I_MUTEX_OTHER_PARENT,$/;"	e	enum:__anon4
+KERNELDIR	Makefile	/^	KERNELDIR ?= \/lib\/modules\/$(shell uname -r)\/build$/;"	m
+Link	namei.c	/^	Link,$/;"	e	enum:op_type	file:
+MAX	dispatch.c	9;"	d	file:
+MAX_CPUS	dentry.c	17;"	d	file:
+Mkdir	namei.c	/^	Mkdir,$/;"	e	enum:op_type	file:
+Mknod	namei.c	/^	Mknod,$/;"	e	enum:op_type	file:
+NR_REPLICAS	sfs_fs.h	274;"	d
+POINTER	kv.h	4;"	d
+PWD	Makefile	/^	PWD := $(shell pwd)$/;"	m
+RENAME	kv.h	5;"	d
+Rename	namei.c	/^	Rename$/;"	e	enum:op_type	file:
+SFS_D	sfs_fs.h	/^struct sfs_dentry *SFS_D(const struct dentry *dentry)$/;"	f
+SFS_F	file.h	/^static inline struct sfs_file * SFS_F(const struct file *file)$/;"	f
+SFS_S	sfs_fs.h	/^static inline struct sfs_sb_info *SFS_S(const struct super_block *sb)$/;"	f
+SPAN_THRESHOLD	sfs_fs.h	23;"	d
+STALE	kv.h	7;"	d
+S_RENAME_SFS	sfs_fs.h	/^	S_RENAME_SFS$/;"	e	enum:__anon5
+S_RENAME_SFS_BEGIN	sfs_fs.h	/^	S_RENAME_SFS_BEGIN,$/;"	e	enum:__anon5
+Symlink	namei.c	/^	Symlink,$/;"	e	enum:op_type	file:
+_H_DENTRY_H	dentry.h	2;"	d
+_KV_H	kv.h	2;"	d
+_SFS_DIR_H	dir.h	2;"	d
+_SFS_DISPATCH_H	dispatch.h	2;"	d
+_SFS_FILE_H	file.h	2;"	d
+_SFS_FS_H	sfs_fs.h	2;"	d
+_SFS_INODE_H	inode.h	2;"	d
+_SFS_NAMEI_H	namei.h	2;"	d
+__this_module	sfs.mod.c	/^struct module __this_module$/;"	v	typeref:struct:module
+__used	sfs.mod.c	/^__used$/;"	v	file:
+__used	sfs.mod.c	/^__used$/;"	v	typeref:struct:____versions	file:
+add_arg	namei.c	/^struct add_arg {$/;"	s	file:
+alloc_hash_table	dir.c	/^static struct hlist_head **alloc_hash_table(int hash_len)$/;"	f	file:
+assign_cpus	dispatch.c	/^int assign_cpus(struct super_block *sb)$/;"	f
+bind_on_update	dispatch.c	/^void bind_on_update(unsigned int replica_id, struct cpumask *saved_mask, unsigned int *dest_cpu)$/;"	f
+bind_on_update_1	dispatch.c	/^void bind_on_update_1(unsigned int replica_id, struct cpumask *saved_mask, unsigned int *dest_cpu)$/;"	f
+caculate_hash_len	dir.c	/^static unsigned int caculate_hash_len(uint64_t size)$/;"	f	file:
+can_turn2normal	namei.c	/^int can_turn2normal(struct dentry *dentry, int replica_id)$/;"	f
+check_concurrency	dispatch.c	/^static void check_concurrency(struct sfs_sb_info *sbi, int *needed_migrate)$/;"	f	file:
+check_normal_dir	namei.c	/^int check_normal_dir(struct dentry *parent, int replica_id)$/;"	f
+clean_dentry	dentry.c	/^void clean_dentry(struct dentry *dentry)$/;"	f
+clean_replica_dentry	namei.c	/^static inline void clean_replica_dentry(struct dentry *replica)$/;"	f	file:
+clean_sfs_dentry	dentry.c	/^static void clean_sfs_dentry(struct sfs_dentry *sfs_dentry)$/;"	f	file:
+clear_dentry	sfs_fs.h	/^void clear_dentry(struct dentry *dentry)$/;"	f
+clear_root_dentry	sfs_fs.h	/^void clear_root_dentry(struct dentry *dentry)$/;"	f
+copy_super	super.c	/^static void copy_super(struct super_block *dest, struct super_block *src)$/;"	f	file:
+count	dir.c	/^	int count;$/;"	m	struct:readdir_callback	file:
+cpu2fs_mapping	dispatch.c	/^static struct cpu2fs_mapping **cpu2fs_mapping;$/;"	v	typeref:struct:cpu2fs_mapping	file:
+cpu2fs_mapping	dispatch.c	/^struct cpu2fs_mapping {$/;"	s	file:
+cpu_set	sfs_fs.h	/^	struct cpumask cpu_set;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::cpumask
+creat	namei.c	/^		}creat;$/;"	m	union:add_arg::__anon6	typeref:struct:add_arg::__anon6::__anon7	file:
+create_replica_dir	namei.c	/^struct dentry *create_replica_dir(struct dentry *dentry, int replica_id, int clone_type)$/;"	f
+ctx	dir.c	/^	struct dir_context ctx;$/;"	m	struct:readdir_callback	typeref:struct:readdir_callback::dir_context	file:
+ctx	dir.c	/^	struct dir_context ctx;$/;"	m	struct:skip_callback	typeref:struct:skip_callback::dir_context	file:
+curr_file	dir.h	/^	struct sfs_file *curr_file;$/;"	m	struct:dir_info	typeref:struct:dir_info::sfs_file
+curr_major_pos	dir.h	/^	loff_t curr_major_pos;$/;"	m	struct:dir_info
+curr_minor_pos	dir.h	/^	loff_t curr_minor_pos;$/;"	m	struct:dir_info
+d_add_replica	namei.c	/^void d_add_replica(struct dentry *dentry, struct dentry *replica,$/;"	f
+d_ancestor	rename.c	/^struct dentry *d_ancestor(struct dentry *p1, struct dentry *p2)$/;"	f
+dec_cocurrency	dispatch.c	/^static void dec_cocurrency(struct sfs_sb_info *sbi, unsigned int cpu)$/;"	f	file:
+delete_partitioned_file	namei.c	/^static int delete_partitioned_file(struct inode *dir, struct dentry *dentry)$/;"	f	file:
+destroy_cpu2fs_mapping	dispatch.c	/^void destroy_cpu2fs_mapping(void )$/;"	f
+destroy_dentrycache	dentry.c	/^void destroy_dentrycache(void)$/;"	f
+destroy_filecache	file.c	/^void destroy_filecache(void)$/;"	f
+dev	namei.c	/^			dev_t dev;$/;"	m	struct:add_arg::__anon6::__anon9	file:
+dir_entry	dir.h	/^struct dir_entry {$/;"	s
+dir_hash_add	dir.c	/^static void dir_hash_add(struct dir_info *dir_info, struct dir_entry *dir_entry)$/;"	f	file:
+dir_info	dir.c	/^	struct dir_info *dir_info;$/;"	m	struct:readdir_callback	typeref:struct:readdir_callback::dir_info	file:
+dir_info	dir.c	/^	struct dir_info *dir_info;$/;"	m	struct:skip_callback	typeref:struct:skip_callback::dir_info	file:
+dir_info	dir.h	/^struct dir_info {$/;"	s
+dir_lookup	dir.c	/^static int dir_lookup(struct dir_info *dir_info, const char *name ,int namelen, unsigned int hash)$/;"	f	file:
+dir_name_hash	dir.c	/^static unsigned int dir_name_hash(const char *name, int namelen)$/;"	f	file:
+dir_string_cmp	dir.c	/^static inline int dir_string_cmp(const char *cs,const char *ct, unsigned int tcount)$/;"	f	file:
+dirent	dir.c	/^	void *dirent;$/;"	m	struct:readdir_callback	file:
+dirent_bucket	dir.h	/^	struct hlist_head **dirent_bucket;$/;"	m	struct:dir_info	typeref:struct:dir_info::hlist_head
+dispatch	dispatch.c	/^unsigned int dispatch(void)$/;"	f
+end_file	dir.h	/^	struct sfs_file *end_file;$/;"	m	struct:dir_info	typeref:struct:dir_info::sfs_file
+end_of_file	dir.c	/^static loff_t end_of_file(struct file *file)$/;"	f	file:
+error	dir.c	/^	int error;$/;"	m	struct:readdir_callback	file:
+excl	namei.c	/^			bool excl;$/;"	m	struct:add_arg::__anon6::__anon7	file:
+exit_sfs_fs	super.c	/^module_exit(exit_sfs_fs);$/;"	v
+exit_sfs_fs	super.c	/^static void __exit exit_sfs_fs(void)$/;"	f	file:
+f_add_replica	file.c	/^void f_add_replica(struct sfs_file *sfs_master, struct sfs_file *sfs_replica, unsigned int replica_id)$/;"	f
+f_private_data	file.h	/^	void *f_private_data;$/;"	m	struct:sfs_file
+file	file.h	/^	struct file *file;$/;"	m	struct:sfs_file	typeref:struct:sfs_file::file
+file_pos_read	file.c	/^static inline loff_t file_pos_read(struct file *file)$/;"	f	file:
+file_pos_write	file.c	/^static inline void file_pos_write(struct file *file, loff_t pos)$/;"	f	file:
+file_struct_sync	file.c	/^void file_struct_sync(struct file *src, struct file *target)$/;"	f
+file_type	dir.h	/^	u8	file_type;$/;"	m	struct:dir_entry
+filldir	dir.c	/^	filldir_t filldir;$/;"	m	struct:readdir_callback	file:
+find_replica_dentry	sfs_fs.h	/^struct dentry *find_replica_dentry(const struct dentry *dentry, int replica_id)$/;"	f
+finish_update	dispatch.c	/^void finish_update(unsigned int replica_id, struct cpumask *saved_mask, unsigned int dest_cpu)$/;"	f
+first_normal_dir_id	sfs_fs.h	/^	int first_normal_dir_id;$/;"	m	struct:sfs_dentry
+free_hash_table	dir.c	/^static void free_hash_table(struct hlist_head **hash_table, int hash_len)$/;"	f	file:
+get	kv.c	/^int get(struct dentry *dentry, const char *key, int value[])$/;"	f
+get_meta_id	sfs_fs.h	/^int get_meta_id(const struct dentry *dentry)$/;"	f
+get_replica_count	super.c	/^unsigned int get_replica_count(void)$/;"	f
+get_replica_dentry	namei.c	/^struct dentry* get_replica_dentry(struct dentry *replica_parent, struct dentry *dentry,$/;"	f
+get_replica_id	sfs_fs.h	/^int get_replica_id(const struct dentry *dentry)$/;"	f
+get_replica_sbi	super.c	/^struct sfs_sb_info *get_replica_sbi(int replica_id)$/;"	f
+get_sfs_dentry	dentry.c	/^static inline struct sfs_dentry *get_sfs_dentry(struct dentry *dentry)$/;"	f	file:
+global_counter	sfs_fs.h	/^	int global_counter;$/;"	m	struct:sfs_dentry
+hash	dir.h	/^	unsigned int hash;$/;"	m	struct:dir_entry
+hash_len	dir.h	/^	int hash_len;$/;"	m	struct:dir_info
+hash_node	dir.h	/^	struct hlist_node hash_node;$/;"	m	struct:dir_entry	typeref:struct:dir_entry::hlist_node
+inc_concurrency	dispatch.c	/^static void inc_concurrency(struct sfs_sb_info *sbi, unsigned int cpu)$/;"	f	file:
+init_cpu2fs_mapping	dispatch.c	/^int init_cpu2fs_mapping(void)$/;"	f
+init_dentrycache	dentry.c	/^int init_dentrycache(void)$/;"	f
+init_filecache	file.c	/^int init_filecache(void)$/;"	f
+init_sfs_fs	super.c	/^module_init(init_sfs_fs);$/;"	v
+init_sfs_fs	super.c	/^static int __init init_sfs_fs(void)$/;"	f	file:
+inline_pos	dir.c	/^	loff_t inline_pos;$/;"	m	struct:skip_callback	file:
+ino	dir.h	/^	u32	ino;$/;"	m	struct:dir_entry
+instantiate_replica_dentry	namei.c	/^static inline void instantiate_replica_dentry(struct dentry *replica, struct dentry *replica_parent)$/;"	f	file:
+is_partitioned	file.h	/^			int is_partitioned;$/;"	m	struct:sfs_file::__anon11::__anon12
+last_dispatch	dispatch.c	/^static atomic_t last_dispatch;$/;"	v	file:
+last_pos	dir.h	/^	loff_t last_pos;$/;"	m	struct:dir_info
+link	namei.c	/^		}link;$/;"	m	union:add_arg::__anon6	typeref:struct:add_arg::__anon6::__anon10	file:
+list_del_replica_file	sfs_fs.h	/^void list_del_replica_file(struct sfs_file *sfs_replica)$/;"	f
+list_first_replica_dentry	sfs_fs.h	/^struct dentry *list_first_replica_dentry(const struct dentry *dentry)$/;"	f
+list_first_replica_file	sfs_fs.h	/^struct sfs_file *list_first_replica_file(struct sfs_file *sfs_file)$/;"	f
+list_for_each_replica	sfs_fs.h	276;"	d
+list_for_each_replica_continue	sfs_fs.h	282;"	d
+list_for_each_replica_from	sfs_fs.h	285;"	d
+list_for_each_replica_safe	sfs_fs.h	279;"	d
+list_last_replica_file	sfs_fs.h	/^struct sfs_file *list_last_replica_file(struct sfs_file *sfs_file)$/;"	f
+local_counter	sfs_fs.h	/^	int local_counter;$/;"	m	struct:sfs_dentry
+local_dispatch	dispatch.c	/^int local_dispatch(struct dentry *dentry, int *partitioned_id)$/;"	f
+lock	dir.h	/^	spinlock_t lock;$/;"	m	struct:dir_info
+lock	sfs_fs.h	/^	spinlock_t lock;$/;"	m	struct:sfs_dentry
+lock	sfs_fs.h	/^	spinlock_t lock;$/;"	m	struct:sfs_sb_info
+m	file.h	/^		}m;$/;"	m	union:sfs_file::__anon11	typeref:struct:sfs_file::__anon11::__anon12
+m	sfs_fs.h	/^		}m;$/;"	m	union:sfs_sb_info::__anon1	typeref:struct:sfs_sb_info::__anon1::__anon2
+master	file.h	/^			struct sfs_file *master;$/;"	m	struct:sfs_file::__anon11::__anon13	typeref:struct:sfs_file::__anon11::__anon13::sfs_file
+master	sfs_fs.h	/^			struct sfs_sb_info *master;$/;"	m	struct:sfs_sb_info::__anon1::__anon3	typeref:struct:sfs_sb_info::__anon1::__anon3::sfs_sb_info
+meta_id	sfs_fs.h	/^	int meta_id;   \/\/point to the meta file$/;"	m	struct:sfs_dentry
+meta_persistent	file.h	/^			int meta_persistent;$/;"	m	struct:sfs_file::__anon11::__anon12
+migrate_on_update	dispatch.c	/^void migrate_on_update(unsigned int replica_id, struct cpumask *saved_mask, unsigned int *dest_cpu)$/;"	f
+migrate_on_update_1	dispatch.c	/^void migrate_on_update_1(unsigned int replica_id, struct cpumask *saved_mask, unsigned int *dest_cpu)$/;"	f
+mknod	namei.c	/^		}mknod;$/;"	m	union:add_arg::__anon6	typeref:struct:add_arg::__anon6::__anon9	file:
+mode	namei.c	/^	umode_t mode;$/;"	m	struct:add_arg	file:
+modify	kv.c	/^int modify(struct dentry *dentry, const char *key, const int value, int sequence)$/;"	f
+name	dir.h	/^	char name[1];$/;"	m	struct:dir_entry
+name_len	dir.h	/^	u8	name_len;$/;"	m	struct:dir_entry
+next_replica_file	sfs_fs.h	/^struct sfs_file *next_replica_file(struct sfs_file *sfs_replica_file, struct sfs_file *sfs_file)$/;"	f
+normal_dir_count	sfs_fs.h	/^	int normal_dir_count;$/;"	m	struct:sfs_dentry
+normal_dir_map	sfs_fs.h	/^	uint64_t normal_dir_map;$/;"	m	struct:sfs_dentry
+nr_accessing_cpus	sfs_fs.h	/^	unsigned long nr_accessing_cpus;  $/;"	m	struct:sfs_sb_info
+nr_accessing_processes_percpu	sfs_fs.h	/^	unsigned long nr_accessing_processes_percpu[NR_CPUS];  $/;"	m	struct:sfs_sb_info
+nr_online_cpus	dispatch.c	/^static int nr_online_cpus;$/;"	v	file:
+obj-m	Makefile	/^	obj-m := sfs.o$/;"	m
+offset	dir.h	/^	u64	offset;$/;"	m	struct:dir_entry
+old_replica_dentry	namei.c	/^			struct dentry *old_replica_dentry;$/;"	m	struct:add_arg::__anon6::__anon10	typeref:struct:add_arg::__anon6::__anon10::dentry	file:
+oldname	namei.c	/^			const char *oldname;$/;"	m	struct:add_arg::__anon6::__anon8	file:
+op_type	namei.c	/^enum op_type{$/;"	g	file:
+orign_ctx	dir.c	/^	struct dir_context *orign_ctx;$/;"	m	struct:readdir_callback	typeref:struct:readdir_callback::dir_context	file:
+put	kv.c	/^int put(struct dentry *dentry, const char *key, const int value[])$/;"	f
+r	file.h	/^		}r;$/;"	m	union:sfs_file::__anon11	typeref:struct:sfs_file::__anon11::__anon13
+r	sfs_fs.h	/^		}r;$/;"	m	union:sfs_sb_info::__anon1	typeref:struct:sfs_sb_info::__anon1::__anon3
+readdir_callback	dir.c	/^struct readdir_callback {$/;"	s	file:
+rename2exist	rename.c	/^static int rename2exist(struct inode *old_dir, struct dentry *old_dentry,$/;"	f	file:
+rename2non	rename.c	/^static int rename2non(struct inode *old_dir, struct dentry *old_dentry,$/;"	f	file:
+replica_count	sfs_fs.h	/^			atomic_t replica_count;$/;"	m	struct:sfs_sb_info::__anon1::__anon2
+replica_count	super.c	/^unsigned int replica_count;$/;"	v
+replica_id	file.h	/^			unsigned int replica_id;$/;"	m	struct:sfs_file::__anon11::__anon13
+replica_id	sfs_fs.h	/^	int replica_id;   \/\/point to the data file$/;"	m	struct:sfs_dentry
+replica_list	file.h	/^			struct list_head replica_list;$/;"	m	struct:sfs_file::__anon11::__anon13	typeref:struct:sfs_file::__anon11::__anon13::list_head
+replica_list	sfs_fs.h	/^			struct list_head replica_list;$/;"	m	struct:sfs_sb_info::__anon1::__anon3	typeref:struct:sfs_sb_info::__anon1::__anon3::list_head
+replicas	file.h	/^			struct list_head replicas;$/;"	m	struct:sfs_file::__anon11::__anon12	typeref:struct:sfs_file::__anon11::__anon12::list_head
+replicas	sfs_fs.h	/^			struct list_head replicas;$/;"	m	struct:sfs_sb_info::__anon1::__anon2	typeref:struct:sfs_sb_info::__anon1::__anon2::list_head
+replicas	sfs_fs.h	/^	struct dentry **replicas;$/;"	m	struct:sfs_dentry	typeref:struct:sfs_dentry::dentry
+reset	kv.c	/^int reset(struct dentry *dentry, const char *key)$/;"	f
+reset_replica_dentry	rename.c	/^void reset_replica_dentry(struct dentry *target, int replica_id)$/;"	f
+s_add_replica	super.c	/^void s_add_replica(struct sfs_sb_info *sfs_master_sbi, struct sfs_sb_info *sfs_replica_sbi,$/;"	f
+s_data_root	sfs_fs.h	/^	struct dentry *s_data_root;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::dentry
+s_mnt	sfs_fs.h	/^	struct vfsmount *s_mnt;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::vfsmount
+s_replica_id	sfs_fs.h	/^	int s_replica_id;$/;"	m	struct:sfs_sb_info
+s_sb	sfs_fs.h	/^	struct super_block *s_sb;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::super_block
+s_special	sfs_fs.h	/^	struct dentry *s_special;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::dentry
+sbi	dispatch.c	/^	struct sfs_sb_info *sbi; $/;"	m	struct:cpu2fs_mapping	typeref:struct:cpu2fs_mapping::sfs_sb_info	file:
+sbi_array	super.c	/^static struct sfs_sb_info **sbi_array;$/;"	v	typeref:struct:sfs_sb_info	file:
+sdentry_list_lock	dentry.c	/^struct spinlock sdentry_list_lock[MAX_CPUS];$/;"	v	typeref:struct:spinlock
+select_normal_dir_rr	dispatch.c	/^int select_normal_dir_rr(struct dentry *dentry)$/;"	f
+set_bitmap	sfs_fs.h	/^void set_bitmap(uint64_t *bitmap, int shift)$/;"	f
+set_meta_id	sfs_fs.h	/^void set_meta_id(const struct dentry *dentry, int meta_id)$/;"	f
+set_normal_dir	namei.c	/^int set_normal_dir(struct dentry *parent, int replica_id)$/;"	f	file:
+set_replica_id	sfs_fs.h	/^void set_replica_id(const struct dentry *dentry, int replica_id)$/;"	f
+sfs-objs	Makefile	/^	sfs-objs = super.o inode.o dentry.o namei.o rename.o dir.o file.o symlink.o dispatch.o kv.o $/;"	m
+sfs_add_dir_entry	namei.c	/^static int sfs_add_dir_entry(struct inode *dir, struct dentry *dentry, struct add_arg *arg)$/;"	f	file:
+sfs_add_entry	namei.c	/^static int sfs_add_entry(struct inode *dir, struct dentry *dentry, struct add_arg *arg)$/;"	f	file:
+sfs_alloc_dir_info	dir.c	/^static struct dir_info *sfs_alloc_dir_info(struct sfs_file *sfs_file)$/;"	f	file:
+sfs_alloc_inode	inode.c	/^struct inode *sfs_alloc_inode(struct super_block *sb)$/;"	f
+sfs_alloc_root	inode.c	/^int sfs_alloc_root(struct super_block *sb)$/;"	f
+sfs_aop	file.c	/^const struct address_space_operations sfs_aop = {$/;"	v	typeref:struct:address_space_operations
+sfs_clone_branch	namei.c	/^struct dentry *sfs_clone_branch(struct dentry *dentry, unsigned int replica_id)$/;"	f
+sfs_compat_ioctl	file.c	/^long sfs_compat_ioctl(struct file * file, unsigned int cmd, unsigned long arg)$/;"	f
+sfs_create	namei.c	/^static int sfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,$/;"	f	file:
+sfs_d_instantiate	namei.c	/^static inline void sfs_d_instantiate(struct dentry *dentry, struct inode *inode)$/;"	f	file:
+sfs_d_move	rename.c	/^void sfs_d_move(struct dentry *dentry, struct dentry *target, int replica_id)$/;"	f
+sfs_dec_count	namei.c	/^static void sfs_dec_count(struct inode *inode)$/;"	f	file:
+sfs_dentry	sfs_fs.h	/^struct sfs_dentry {$/;"	s
+sfs_dentry_alloc	dentry.c	/^struct sfs_dentry *sfs_dentry_alloc(struct dentry *dentry){$/;"	f
+sfs_dentry_cachep	dentry.c	/^static struct kmem_cache *sfs_dentry_cachep;$/;"	v	typeref:struct:kmem_cache	file:
+sfs_dentry_delete	dentry.c	/^static int sfs_dentry_delete(const struct dentry *dentry)$/;"	f	file:
+sfs_dentry_operations	dentry.c	/^const struct dentry_operations sfs_dentry_operations = {$/;"	v	typeref:struct:dentry_operations
+sfs_dentry_real_alloc	dentry.c	/^static struct sfs_dentry *sfs_dentry_real_alloc(struct dentry *dentry)$/;"	f	file:
+sfs_dentry_release	dentry.c	/^static void sfs_dentry_release(struct dentry *dentry)$/;"	f	file:
+sfs_dir_getattr	inode.c	/^static int sfs_dir_getattr(struct vfsmount *mnt, struct dentry *dentry,$/;"	f	file:
+sfs_dir_inode_operations	namei.c	/^const struct inode_operations sfs_dir_inode_operations = {$/;"	v	typeref:struct:inode_operations
+sfs_dir_llseek	dir.c	/^static loff_t sfs_dir_llseek(struct file *file, loff_t offset, int whence)$/;"	f	file:
+sfs_dir_open	dir.c	/^static int sfs_dir_open(struct inode *inode, struct file *file)$/;"	f	file:
+sfs_dir_operations	dir.c	/^const struct file_operations sfs_dir_operations = {$/;"	v	typeref:struct:file_operations
+sfs_dir_seek	dir.c	/^static int sfs_dir_seek(struct file *file, loff_t f_pos)$/;"	f	file:
+sfs_dir_setattr	inode.c	/^int sfs_dir_setattr(struct dentry *dentry, struct iattr *attr)$/;"	f
+sfs_direct_IO	file.c	/^static ssize_t sfs_direct_IO(int rw, struct kiocb *iocb,$/;"	f	file:
+sfs_drop_inode	super.c	/^static int sfs_drop_inode(struct inode *inode)$/;"	f	file:
+sfs_fallocate	file.c	/^static long sfs_fallocate(struct file *file, int mode, loff_t offset, loff_t len)$/;"	f	file:
+sfs_fiemap	inode.c	/^int sfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,$/;"	f
+sfs_file	dir.h	/^	struct sfs_file *sfs_file;$/;"	m	struct:dir_info	typeref:struct:dir_info::sfs_file
+sfs_file	file.h	/^struct sfs_file {$/;"	s
+sfs_file_aio_read	file.c	/^sfs_file_aio_read(struct kiocb *iocb, const struct iovec *iov, $/;"	f
+sfs_file_aio_write	file.c	/^sfs_file_aio_write(struct kiocb *iocb, const struct iovec *iov, $/;"	f
+sfs_file_cachep	file.c	/^static struct kmem_cache *sfs_file_cachep;$/;"	v	typeref:struct:kmem_cache	file:
+sfs_file_getattr	inode.c	/^static int sfs_file_getattr(struct vfsmount *mnt, struct dentry *dentry,$/;"	f	file:
+sfs_file_inode_operations	file.c	/^const struct inode_operations sfs_file_inode_operations = {$/;"	v	typeref:struct:inode_operations
+sfs_file_llseek	file.c	/^loff_t sfs_file_llseek(struct file *file, loff_t offset, int whence)$/;"	f
+sfs_file_mmap	file.c	/^static int sfs_file_mmap(struct file *file, struct vm_area_struct *vma)$/;"	f	file:
+sfs_file_open	file.c	/^static int sfs_file_open(struct inode *inode, struct file *flip)$/;"	f	file:
+sfs_file_operations	file.c	/^const struct file_operations sfs_file_operations = {$/;"	v	typeref:struct:file_operations
+sfs_file_read	file.c	/^ssize_t sfs_file_read(struct file *file, char __user *buf, size_t len, loff_t *ppos)$/;"	f
+sfs_file_remap_pages	file.c	/^int sfs_file_remap_pages(struct vm_area_struct *vma, unsigned long addr, $/;"	f
+sfs_file_setattr	inode.c	/^int sfs_file_setattr(struct dentry *dentry, struct iattr *attr)$/;"	f
+sfs_file_splice_read	file.c	/^static ssize_t sfs_file_splice_read(struct file *in, loff_t *ppos,$/;"	f	file:
+sfs_file_splice_write	file.c	/^static ssize_t sfs_file_splice_write(struct pipe_inode_info *pipe, struct file *out,$/;"	f	file:
+sfs_file_vm_ops	file.c	/^static const struct vm_operations_struct sfs_file_vm_ops = {$/;"	v	typeref:struct:vm_operations_struct	file:
+sfs_file_write	file.c	/^ssize_t sfs_file_write(struct file *file, const char __user *buf, size_t len, loff_t *ppos)$/;"	f
+sfs_filemap_fault	file.c	/^int sfs_filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)$/;"	f
+sfs_fill_super	super.c	/^static int sfs_fill_super (struct super_block *sb, void *data, int silent)$/;"	f	file:
+sfs_filldir	dir.c	/^static int sfs_filldir(void *__buf, const char *name, int namelen, loff_t d_offset,$/;"	f	file:
+sfs_follow_link	symlink.c	/^static void *sfs_follow_link(struct dentry *dentry, struct nameidata *nd)$/;"	f	file:
+sfs_free_hash_dirent	dir.c	/^static void sfs_free_hash_dirent(struct dir_info *dir_info)$/;"	f	file:
+sfs_freeze_fs	super.c	/^static int sfs_freeze_fs(struct super_block *sb)$/;"	f	file:
+sfs_fs_type	super.c	/^static struct file_system_type sfs_fs_type = {$/;"	v	typeref:struct:file_system_type	file:
+sfs_get_xip_mem	file.c	/^static int sfs_get_xip_mem(struct address_space *mapping, pgoff_t pgoff,$/;"	f	file:
+sfs_getattr	inode.c	/^int sfs_getattr(struct vfsmount *mnt, struct dentry *dentry,$/;"	f
+sfs_ioctl	file.c	/^long sfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)$/;"	f
+sfs_iput	inode.c	/^void sfs_iput(struct dentry *dentry , struct inode *inode)$/;"	f
+sfs_iterate	dir.c	/^static int sfs_iterate(struct file *file, $/;"	f	file:
+sfs_kill_sb	super.c	/^static void sfs_kill_sb(struct super_block *sb)$/;"	f	file:
+sfs_link	namei.c	/^static int sfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_dentry)$/;"	f	file:
+sfs_lock_rename	rename.c	/^struct dentry *sfs_lock_rename(struct dentry *p1, struct dentry *p2)$/;"	f
+sfs_lookup	namei.c	/^static struct dentry *sfs_lookup(struct inode *dir, struct dentry *dentry, unsigned int flags)$/;"	f	file:
+sfs_lookup_one_len	namei.c	/^struct dentry *sfs_lookup_one_len(const struct qstr *name, struct dentry *replica_parent)$/;"	f	file:
+sfs_master_file_alloc	file.c	/^struct sfs_file *sfs_master_file_alloc(struct file *file)$/;"	f
+sfs_master_sbi_alloc	super.c	/^static struct sfs_sb_info *sfs_master_sbi_alloc(struct super_block *sb)$/;"	f	file:
+sfs_mkdir	namei.c	/^static int sfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)$/;"	f	file:
+sfs_mknod	namei.c	/^static int sfs_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,$/;"	f	file:
+sfs_mount	super.c	/^static struct dentry *sfs_mount(struct file_system_type *fs_type,$/;"	f	file:
+sfs_new_file	file.c	/^int sfs_new_file(struct file *master, struct file *replica, unsigned int replica_id)$/;"	f
+sfs_new_inode	inode.c	/^struct inode *sfs_new_inode(struct super_block *sb, umode_t mode)$/;"	f
+sfs_opts_parse	super.c	/^static int sfs_opts_parse(struct super_block *sb, char *str)$/;"	f	file:
+sfs_page_mkwrite	file.c	/^int sfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)$/;"	f
+sfs_put_link	symlink.c	/^static void sfs_put_link(struct dentry *dentry, struct nameidata *nd,$/;"	f	file:
+sfs_readdir	dir.c	/^static int sfs_readdir(struct file *file, $/;"	f	file:
+sfs_readlink	symlink.c	/^static int sfs_readlink(struct dentry *dentry, char __user *buf, int bufsize)$/;"	f	file:
+sfs_readpage	file.c	/^static int sfs_readpage(struct file *file, struct page *page)$/;"	f	file:
+sfs_refresh_hash_dirent	dir.c	/^static void sfs_refresh_hash_dirent(struct dir_info *dir_info)$/;"	f	file:
+sfs_release_dir	dir.c	/^static int sfs_release_dir(struct inode *inode, struct file *file)$/;"	f	file:
+sfs_release_file	file.c	/^static int sfs_release_file(struct inode *inode, struct file *file)$/;"	f	file:
+sfs_rename	rename.c	/^int sfs_rename(struct inode *old_dir, struct dentry *old_dentry, $/;"	f
+sfs_rename_dir	rename.c	/^static int sfs_rename_dir(struct inode *old_dir, struct dentry *old_dentry,$/;"	f	file:
+sfs_rename_other	rename.c	/^static int sfs_rename_other(struct inode *old_dir, struct dentry *old_dentry,$/;"	f	file:
+sfs_replica_file_alloc	file.c	/^struct sfs_file *sfs_replica_file_alloc(struct file *file)$/;"	f
+sfs_replica_sbi_alloc	super.c	/^static struct sfs_sb_info *sfs_replica_sbi_alloc(struct super_block *sb)$/;"	f	file:
+sfs_rmdir	namei.c	/^int sfs_rmdir(struct inode *dir, struct dentry *dentry)$/;"	f
+sfs_sb_info	sfs_fs.h	/^struct sfs_sb_info {$/;"	s
+sfs_set_aops	inode.c	/^static void sfs_set_aops(struct inode *inode)$/;"	f	file:
+sfs_setattr	inode.c	/^int sfs_setattr(struct dentry *dentry, struct iattr *attr)$/;"	f
+sfs_show_options	super.c	/^static int sfs_show_options(struct seq_file *m, struct dentry *dentry)$/;"	f	file:
+sfs_skip_filldir	dir.c	/^static int sfs_skip_filldir(void *__buf, const char *name, int namelen, loff_t offset,$/;"	f	file:
+sfs_sops	super.c	/^static const struct super_operations sfs_sops = {$/;"	v	typeref:struct:super_operations	file:
+sfs_statfs	super.c	/^static int sfs_statfs(struct dentry *dentry, struct kstatfs *buf)$/;"	f	file:
+sfs_symlink	namei.c	/^static int sfs_symlink(struct inode *dir, struct dentry *dentry, const char *oldname)$/;"	f	file:
+sfs_symlink_inode_operations	symlink.c	/^const struct inode_operations sfs_symlink_inode_operations = {$/;"	v	typeref:struct:inode_operations
+sfs_sync_dir	dir.c	/^int sfs_sync_dir(struct file *file, loff_t start, loff_t end, int datasync)$/;"	f
+sfs_sync_file	file.c	/^int sfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)$/;"	f
+sfs_sync_fs	super.c	/^static int sfs_sync_fs(struct super_block *sb, int wait)$/;"	f	file:
+sfs_unfreeze_fs	super.c	/^static int sfs_unfreeze_fs(struct super_block *sb)$/;"	f	file:
+sfs_unlink	namei.c	/^static int sfs_unlink(struct inode *dir, struct dentry *dentry)$/;"	f	file:
+sfs_unlock_rename	rename.c	/^void sfs_unlock_rename(struct dentry *p1, struct dentry *p2)$/;"	f
+simple_add_dir_entry	namei.c	/^int simple_add_dir_entry(struct dentry *dentry, umode_t mode, int replica_id, int clone_type)$/;"	f
+simple_add_entry	namei.c	/^int simple_add_entry(struct dentry *dentry, struct add_arg *arg, int local_id)$/;"	f
+simple_add_partitioned_entry	namei.c	/^int simple_add_partitioned_entry(struct dentry *dentry, struct add_arg *arg, int local_id, int remote_id)$/;"	f
+simple_file_open	file.c	/^static int simple_file_open(struct path *path, struct file *filp, unsigned int replica_id)$/;"	f	file:
+simple_unlink	namei.c	/^int simple_unlink(struct inode *replica_dir, struct dentry *replica_dentry)$/;"	f
+simple_unlink_not_put	namei.c	/^int simple_unlink_not_put(struct inode *replica_dir, struct dentry *replica_dentry)$/;"	f
+skip_callback	dir.c	/^struct skip_callback {$/;"	s	file:
+symlink	namei.c	/^		}symlink;$/;"	m	union:add_arg::__anon6	typeref:struct:add_arg::__anon6::__anon8	file:
+test_bitmap	sfs_fs.h	/^uint64_t test_bitmap(uint64_t bitmap, int shift)$/;"	f
+total_nr_entries	dir.h	/^	u32 total_nr_entries;$/;"	m	struct:dir_info
+type	namei.c	/^	enum op_type type;$/;"	m	struct:add_arg	typeref:enum:add_arg::op_type	file:
+u	file.h	/^	}u;$/;"	m	struct:sfs_file	typeref:union:sfs_file::__anon11
+u	namei.c	/^		}u;$/;"	m	struct:add_arg	typeref:union:add_arg::__anon6	file:
+u	sfs_fs.h	/^	}u;$/;"	m	struct:sfs_sb_info	typeref:union:sfs_sb_info::__anon1
+unused_replica_dentry	sfs_fs.h	/^	struct dentry *unused_replica_dentry;$/;"	m	struct:sfs_dentry	typeref:struct:sfs_dentry::dentry
+unused_sdentry_list	dentry.c	/^struct list_head unused_sdentry_list[MAX_CPUS];$/;"	v	typeref:struct:list_head
+validate_file	namei.c	/^int validate_file(struct dentry *dentry)$/;"	f
+validate_partitioned_file	namei.c	/^static int validate_partitioned_file(struct dentry *dentry, int local_id)$/;"	f	file:
+vm_ops	sfs_fs.h	/^	const struct vm_operations_struct *vm_ops;$/;"	m	struct:sfs_sb_info	typeref:struct:sfs_sb_info::vm_operations_struct
