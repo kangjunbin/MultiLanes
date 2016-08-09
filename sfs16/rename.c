@@ -1,5 +1,5 @@
 /** 
- * Copyright (C) 2013 Junbin Kang. All rights reserved.
+ * Copyright (C) 2013-2016 Junbin Kang. All rights reserved.
  */
 
 
