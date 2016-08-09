@@ -6,9 +6,9 @@
  * Copyright 1993 by Theodore Ts'o.  Redistribution of this file is
  * permitted under the GNU General Public License.
  *
- * Implement the virtualized device driver of MultiLanes based on the loop driver
- * Copyright (C) 2013-2015 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>
- * Beihang University
+ * Implement the virtualized device driver of MultiLanes based on the loop driver.
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
+ * Beihang University.
  */
 #ifndef _LINUX_LOOP_H
 #define _LINUX_LOOP_H

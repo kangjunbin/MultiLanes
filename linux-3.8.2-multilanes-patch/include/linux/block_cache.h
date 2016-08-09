@@ -1,7 +1,7 @@
 /*
  * include/linux/block_cache.h
- * Implement the virtualized device driver of MultiLanes based on the loop driver
- * Copyright (C) 2013-2015 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>
+ * Implement the virtualized device driver of MultiLanes based on the loop driver.
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
  * Beihang University
  */
 
