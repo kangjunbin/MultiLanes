@@ -453,7 +453,7 @@ static void lo_end_bio (struct bio *bio, int error) {
 	head = lo_bio -> head;
 	spin_lock_irq(&head->head_lock);
 	head -> nr_done++;
-	spin_unlock_irq(&head->head_lock);
+	
 	orig_bio = head -> orig_bio;
 	if (!error) {
 		orig_bio -> bi_size -= lo_bio -> size;
@@ -473,8 +473,11 @@ static void lo_end_bio (struct bio *bio, int error) {
 		//printk (KERN_INFO "[LO_END_BIO]error: %d\n", head -> error);
 
 		bio_endio(head -> orig_bio, head -> error);
+		spin_unlock_irq(&head->head_lock);
 		kfree (head);	
+		return;
 	}	
+	spin_unlock_irq(&head->head_lock);
 }
 
 extern void submit_bio (int rw, struct bio *bio);
