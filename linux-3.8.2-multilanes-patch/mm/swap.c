@@ -1,5 +1,9 @@
 /*
  *  linux/mm/swap.c
+ * 
+ * Add modifications to implement partitioned page-cache
+ * Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
+ * Beihang University
  *
  *  Copyright (C) 1991, 1992, 1993, 1994  Linus Torvalds
  */
@@ -12,9 +16,6 @@
  * Swap aging added 23.2.95, Stephen Tweedie.
  * Buffermem limits added 12.3.98, Rik van Riel.
  *
- * Add modifications to implement partitioned page-cache
- * Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
- * Beihang University
  */
 
 #include <linux/mm.h>

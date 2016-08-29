@@ -3,6 +3,10 @@
  *
  *  Written by Theodore Ts'o, 3/29/93
  *
+ * Implement the virtualized device driver of MultiLanes based on the Loop driver.
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
+ * Beihang University
+ *
  * Copyright 1993 by Theodore Ts'o.  Redistribution of this file is
  * permitted under the GNU General Public License.
  *
@@ -47,9 +51,6 @@
  * - Advisory locking is ignored here.
  * - Should use an own CAP_* category instead of CAP_SYS_ADMIN
  *
- * Implement the virtualized device driver of MultiLanes based on the Loop driver.
- * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
- * Beihang University
  */
 
 #include <linux/module.h>

@@ -4,8 +4,9 @@
  * Complete reimplementation
  * (C) 1997 Thomas Schoebel-Theuer,
  * with heavy changes by Linus Torvalds
+ * 
  * Add modifications to the VFS to implement the pVFS
- * Copyright 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
  * Beihang University
  */
 

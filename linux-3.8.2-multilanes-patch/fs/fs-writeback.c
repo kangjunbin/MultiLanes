@@ -1,6 +1,10 @@
 /*
  * fs/fs-writeback.c
  *
+ * Add modifications to VFS to implement pVFS
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
+ * Beihang University
+ *
  * Copyright (C) 2002, Linus Torvalds.
  *
  * Contains all the functions related to writing back and waiting
@@ -12,9 +16,7 @@
  *		Split out of fs/inode.c
  *		Additions for address_space-based writeback
  *  
- * Add modifications to VFS to implement pVFS
- * Copyright 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
- * Beihang University
+ *
  */
 
 #include <linux/kernel.h>

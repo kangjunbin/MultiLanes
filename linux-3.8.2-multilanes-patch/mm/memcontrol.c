@@ -1,5 +1,9 @@
 /* memcontrol.c - Memory Controller
  *
+ * Add modifications to implement partitioned page-cache
+ * Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
+ * Beihang University
+ *
  * Copyright IBM Corporation, 2007
  * Author Balbir Singh <balbir@linux.vnet.ibm.com>
  *
@@ -24,9 +28,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * Add modifications to implement partitioned page-cache
- * Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
- * Beihang University
  */
 
 #include <linux/res_counter.h>

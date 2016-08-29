@@ -1,5 +1,9 @@
 /*
  *  linux/fs/super.c
+ * 
+ * Add modifications to VFS to implement pVFS
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
+ * Beihang University
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
  *
@@ -20,9 +24,7 @@
  *  Heavily rewritten for 'one fs - one tree' dcache architecture. AV, Mar 2000
  *
  *
- * Add modifications to VFS to implement pVFS
- * Copyright 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
- * Beihang University
+ *
  */
 
 #include <linux/export.h>
