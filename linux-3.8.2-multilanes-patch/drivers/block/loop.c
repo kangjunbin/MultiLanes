@@ -3,12 +3,13 @@
  *
  *  Written by Theodore Ts'o, 3/29/93
  *
- * Implement the virtualized device driver of MultiLanes based on the Loop driver.
- * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
- * Beihang University
  *
  * Copyright 1993 by Theodore Ts'o.  Redistribution of this file is
  * permitted under the GNU General Public License.
+ *
+ * Implement the virtualized device driver of MultiLanes based on the Loop driver.
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>, Ye Zhai <zhaiye@act.buaa.edu.cn>.
+ * Beihang University
  *
  * DES encryption plus some minor changes by Werner Almesberger, 30-MAY-1993
  * more DES encryption plus IDEA encryption by Nicholas J. Leon, June 20, 1996

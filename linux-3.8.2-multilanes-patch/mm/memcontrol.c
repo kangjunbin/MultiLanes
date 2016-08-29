@@ -1,8 +1,5 @@
 /* memcontrol.c - Memory Controller
  *
- * Add modifications to implement partitioned page-cache
- * Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
- * Beihang University
  *
  * Copyright IBM Corporation, 2007
  * Author Balbir Singh <balbir@linux.vnet.ibm.com>
@@ -17,6 +14,10 @@
  * Kernel Memory Controller
  * Copyright (C) 2012 Parallels Inc. and Google Inc.
  * Authors: Glauber Costa and Suleiman Souhlal
+ *
+ * Add modifications to implement partitioned page-cache
+ * Copyright (C) 2014-2016 Junbin Kang <kangjb@act.buaa.edu.cn>
+ * Beihang University
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

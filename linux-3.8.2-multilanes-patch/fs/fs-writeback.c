@@ -1,9 +1,6 @@
 /*
  * fs/fs-writeback.c
  *
- * Add modifications to VFS to implement pVFS
- * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
- * Beihang University
  *
  * Copyright (C) 2002, Linus Torvalds.
  *
@@ -11,6 +8,10 @@
  * upon dirty inodes against superblocks, and writing back dirty
  * pages against inodes.  ie: data writeback.  Writeout of the
  * inode itself is not handled here.
+ *
+ * Add modifications to VFS to implement pVFS
+ * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
+ * Beihang University
  *
  * 10Apr2002	Andrew Morton
  *		Split out of fs/inode.c

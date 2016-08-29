@@ -1,9 +1,6 @@
 /*
  *  linux/fs/super.c
  * 
- * Add modifications to VFS to implement pVFS
- * Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
- * Beihang University
  *
  *  Copyright (C) 1991, 1992  Linus Torvalds
  *
@@ -15,6 +12,10 @@
  *                                   - ustat system call
  *
  * GK 2/5/95  -  Changed to support mounting the root fs via NFS
+ *
+ *  Add modifications to VFS to implement pVFS
+ *  Copyright (C) 2013-2016 by Junbin Kang <kangjb@act.buaa.edu.cn>, Benlong Zhang <zblgeqian@gmail.com>
+ *  Beihang University
  *
  *  Added kerneld support: Jacques Gelinas and Bjorn Ekwall
  *  Added change_root: Werner Almesberger & Hans Lermen, Feb '96

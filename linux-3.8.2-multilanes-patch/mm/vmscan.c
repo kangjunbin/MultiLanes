@@ -4,7 +4,7 @@
  *  Copyright (C) 1991, 1992, 1993, 1994  Linus Torvalds
  *  
  *  Add modifications to implement partitioned page-cache
- *  Copyright (C) 2014-2016  Junbin Kang <kangjb@act.buaa.edu.cn>
+ *  Copyright (C) 2014-2016 Junbin Kang <kangjb@act.buaa.edu.cn>
  *  Beihang University
  *
  *  Swap reorganised 29.12.95, Stephen Tweedie.
