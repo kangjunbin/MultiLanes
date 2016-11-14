@@ -9,6 +9,10 @@ Specifically, the virtualized device driver of MultiLanes adopts a synchronous b
 Moreover, a prefeteching mechanism is proposed in MultiLanes to mitigate the communication overhead between the storage devices and translation threads.
 The virtualized device driver of MultiLanes is implemented based on the Linux loop device driver.
 
+SFS is a stackable file system that stacks a unifing namespace on top of multiple virtualized devices of MultiLanes to mitigate the contention within each single container.
+SFS is designed as an extension to MultiLanes, which has been described in our ACM TOS paper [MultiLanes: Providing Virtualized Storage
+for OS-level Virtualization on Many Cores](http://dl.acm.org/citation.cfm?id=2801155&dl=ACM).
+
 For more details, please refer to our FAST conference paper [MultiLanes: Providing Virtualized Storage
 for OS-level Virtualization on Many Cores](https://www.usenix.org/system/files/conference/fast14/fast14-paper_kang.pdf)<bf /> and ACM TOS article [MultiLanes: Providing Virtualized Storage
 for OS-level Virtualization on Many Cores](http://dl.acm.org/citation.cfm?id=2801155&dl=ACM).
