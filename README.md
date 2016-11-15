@@ -21,3 +21,11 @@ for OS-level Virtualization on Many Cores](http://dl.acm.org/citation.cfm?id=280
 To run MultiLanes, you should first create sparse files on the host ext3 file system, truncate these files to the predefined size, and then mount the virtualized devices of MultiLanes in the same way how the loop driver works (Our driver is implemented based on loop).
 Specifically, you should run command starting with: mount -o loop 
 
+We also release the MultiLanes driver alone without pVFS for 3.10.103 kernel (2016/11/15).
+You can patch the MultiLanes driver code to Linux 3.10.103 (replacing the loop.c, loop.h and adding the block_cache.h), enable the loop driver and then compile the kernel.
+Then, you can use MultiLanes as the way using loop as our driver is implemented based on loop.
+
+#Authors
+Junbin Kang
+Benlong Zhang
+Ye Zhai
