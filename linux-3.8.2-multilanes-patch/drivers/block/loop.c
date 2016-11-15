@@ -91,6 +91,8 @@
 #include <linux/time.h>
 #include <linux/block_cache.h>
 #include <linux/list.h>
+#include <linux/version.h>
+
 
 MODULE_LICENSE("GPL");
 
@@ -446,54 +448,55 @@ static void lo_end_bio (struct bio *bio, int error) {
 	struct lo_bio *lo_bio= (struct lo_bio *)bio -> bi_private;
 	struct lo_bio_head *head;
 	struct bio *orig_bio;
+	unsigned long flags;
 
 	if (error)
 		clear_bit (BIO_UPTODATE, &bio->bi_flags);
 	else if (!test_bit (BIO_UPTODATE, &bio->bi_flags))
 		error = -EIO;
 
-	head = lo_bio -> head;
-	spin_lock_irq(&head->head_lock);
-	head -> nr_done++;
+	head = lo_bio->head;
+	spin_lock_irqsave(&head->head_lock, flags);
+	head->nr_done++;
 	
 	orig_bio = head -> orig_bio;
 	if (!error) {
-		orig_bio -> bi_size -= lo_bio -> size;
-		orig_bio -> bi_sector += lo_bio -> size >> 9;
+		orig_bio->bi_size -= lo_bio->size;
+		orig_bio->bi_sector += lo_bio->size >> 9;
 	}
 	//take care of the bio_pool_idx thing;
-	orig_bio -> bi_flags |= (4 << bio -> bi_flags) >> 4;
+	orig_bio->bi_flags |= (4 << bio->bi_flags) >> 4;
 
-	if (!head -> error)
-		head -> error = error;	
+	if (!head->error)
+		head->error = error;	
 
 	//printk (KERN_INFO "[DONE]error: %d\n", error);
 	bio_put (bio);
 
-	if (head -> nr_total == head -> nr_done) {
+	if (head->nr_total == head->nr_done) {
 		lo_free_bio (head);
 		//printk (KERN_INFO "[LO_END_BIO]error: %d\n", head -> error);
 
-		bio_endio(head -> orig_bio, head -> error);
-		spin_unlock_irq(&head->head_lock);
+		bio_endio(head->orig_bio, head->error);
+		spin_unlock_irqrestore(&head->head_lock, flags);
 		kfree (head);	
 		return;
 	}	
-	spin_unlock_irq(&head->head_lock);
+	spin_unlock_irqrestore(&head->head_lock, flags);
 }
 
 extern void submit_bio (int rw, struct bio *bio);
 static void lo_send_bio (struct lo_bio_head *head, struct bio *bio) {
 	struct lo_bio *lo_bio = (struct lo_bio *)kmalloc (sizeof (struct lo_bio), GFP_KERNEL); 
 
-	bio -> bi_end_io = lo_end_bio;
+	bio->bi_end_io = lo_end_bio;
 
-	lo_bio -> head = head;
-	lo_bio -> size = bio -> bi_size;
-	list_add_tail (&lo_bio -> slice, &head -> head);
-	bio -> bi_private = (void *)lo_bio;
-	lo_bio -> bio = bio;
-	head -> nr_total++;
+	lo_bio->head = head;
+	lo_bio->size = bio->bi_size;
+	list_add_tail (&lo_bio->slice, &head->head);
+	bio->bi_private = (void *)lo_bio;
+	lo_bio->bio = bio;
+	head->nr_total++;
 }
 
 
@@ -504,7 +507,7 @@ sector_t block_cache_lookup (struct loop_device *lo, sector_t blk_local) {
 	//printk (KERN_INFO "[READ_LOCK] read lock released \n");
 	if(node!=NULL)
 	{
-		sector_t blk_global = node -> b_blocknr;
+		sector_t blk_global = node->b_blocknr;
 	//	printk (KERN_INFO "[LOOP] block_cache_lookup found block_nr = %lu for blk_local=%lu \n",node->b_blocknr,node->blk_local);
 		return blk_global;
 	}
@@ -608,17 +611,17 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 	loop_handle_bio(lo, old_bio);
 	
 	head = (struct lo_bio_head *)kmalloc (sizeof (struct lo_bio_head), GFP_KERNEL);
-	head -> orig_bio = old_bio;
-	head -> nr_total = 0;
-	head -> nr_done = 0;
-	head -> error = 0;
-	spin_lock_init (&head -> head_lock);
-	INIT_LIST_HEAD (&head -> head);
+	head->orig_bio = old_bio;
+	head->nr_total = 0;
+	head->nr_done = 0;
+	head->error = 0;
+	spin_lock_init (&head->head_lock);
+	INIT_LIST_HEAD (&head->head);
 	
 	//printk(KERN_INFO "[REDIRECT_BIO] bio->bi_sector=%lu\n",bio->bi_sector);
 
 	nr_total_sectors = 0;//bio_sectors(old_bio);
-	sec_nr_logical = old_bio -> bi_sector;
+	sec_nr_logical = old_bio->bi_sector;
 
 	count = 0;
 	cur_page_len = 0;
@@ -777,13 +780,13 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 
 		//We need the new way:terminate at the last lo_bio(not at the head),
 		//Thus lo_end_bio will not cause list failure;
-		struct list_head *l_head = &head -> head;
-		struct lo_bio* last = list_entry (l_head -> prev, typeof (*lo_bio), slice);
+		struct list_head *l_head = &head->head;
+		struct lo_bio* last = list_entry (l_head->prev, typeof (*lo_bio), slice);
 	
-		for (lo_bio = list_entry (l_head -> next, typeof (*lo_bio), slice);lo_bio != last; 
+		for (lo_bio = list_entry (l_head->next, typeof (*lo_bio), slice);lo_bio != last; 
 				lo_bio = list_entry(lo_bio->slice.next, typeof (*lo_bio), slice))
-			submit_bio (old_bio -> bi_rw, lo_bio -> bio);
-		submit_bio (old_bio -> bi_rw, last -> bio);
+			submit_bio (old_bio->bi_rw, lo_bio->bio);
+		submit_bio (old_bio->bi_rw, last->bio);
 	}
 	else //can not find a block, we just end it.
 	{
@@ -1021,8 +1024,8 @@ static int loop_thread(void *data)
 	struct bio *bio;
 	//struct cpumask allowed_mask;
 	struct buffer_head bh_result;
-	struct file *file = lo -> lo_backing_file;
-	struct inode *inode = file -> f_mapping -> host;
+	struct file *file = lo->lo_backing_file;
+	struct inode *inode = file->f_mapping->host;
 
 	
 
@@ -1044,7 +1047,7 @@ static int loop_thread(void *data)
 		}
 		
 		spin_lock_irq(&lo->lo_cio_lock);
-		struct list_head *present = lo -> lo_cio_list.next;
+		struct list_head *present = lo->lo_cio_list.next;
 		struct cio_req *cio = list_entry (present, struct cio_req, list);
 		list_del_init (present);
 		spin_unlock_irq(&lo->lo_cio_lock);
@@ -1081,7 +1084,7 @@ static int loop_thread(void *data)
 		
 		int i = 0;
 		int req_num=cio->req_num;
-		sector_t blk_start = cio -> blk_local;
+		sector_t blk_start = cio->blk_local;
 		int create=(cio->create) & WRITE;
 		//printk (KERN_INFO "[CACHE_FETCH]new request received: %d, empty: %d\n", cio -> blk_num, list_empty (&lo->lo_cio_list));
 		struct block_cache_node *cur=find_cache_node(blk_start,lo);
@@ -1101,7 +1104,7 @@ static int loop_thread(void *data)
 					printk(KERN_EMERG "[LOOP] inode ==null\n");
 				bh_result.b_size = (prefetch_blocks-i)<<inode->i_blkbits;
 				//printk (KERN_INFO "[LOOP]inode: 0x%x, blk_start: %lu, bh_result: 0x%x create: %d req_num=%d\n", inode, blk_start, &bh_result,create,req_num);
-				int ret = inode -> i_op -> get_block (inode, blk_start, &bh_result, create);
+				int ret = inode->i_op->get_block (inode, blk_start, &bh_result, create);
 	//			if (create){
 	//				printk(KERN_INFO "get mapping");
 	//			}
@@ -1804,7 +1807,11 @@ loop_get_status(struct loop_device *lo, struct loop_info64 *info)
 
 	if (lo->lo_state != Lo_bound)
 		return -ENXIO;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 103)
 	error = vfs_getattr(file->f_path.mnt, file->f_path.dentry, &stat);
+#else
+	error = vfs_getattr(&(file->f_path), &stat);
+#endif
 	if (error)
 		return error;
 	memset(info, 0, sizeof(*info));
@@ -2561,7 +2568,7 @@ static int __init loop_init(void)
 
 	//printk(KERN_INFO "loop: module loaded\n");
 	printk (KERN_INFO "LOOP: prefetch_blocks=%dk bound=%d\n",prefetch_blocks,bound);
-	printk (KERN_ERR "Loop version 3.0: support sparse files\n");
+	printk (KERN_ERR "Loop version 3.1: support sparse files\n");
 
 	prefetch_blocks=prefetch_blocks/4;
 
@@ -2664,11 +2671,17 @@ static int init_cache(struct loop_device *lo)
 static struct block_cache_node *find_cache_node(sector_t nr, struct loop_device *lo)
 {
 	struct block_cache_node *pnr;
-	struct hlist_node *elem;
+	
 	spin_lock_irq (&lo->cache_lock[cache_hash_func(nr)]);
 	//printk (KERN_INFO "[find_cache_node] entered hash table lock \n");
-	hlist_for_each_entry( pnr, elem, &(lo->block_cache[cache_hash_func(nr)]),node)
-		if(pnr -> blk_local == nr)
+	{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 103)
+	struct hlist_node *elem;
+	hlist_for_each_entry(pnr, elem, &(lo->block_cache[cache_hash_func(nr)]),node)
+#else 
+	hlist_for_each_entry(pnr, &(lo->block_cache[cache_hash_func(nr)]),node)
+#endif
+		if(pnr->blk_local == nr)
 		{
 			//list_del(&pnr -> next);
 			//INIT_LIST_HEAD(&pnr->next);
@@ -2677,6 +2690,7 @@ static struct block_cache_node *find_cache_node(sector_t nr, struct loop_device 
 			//printk (KERN_INFO "[find_cache_node] b_blknr=%lu blk_local=%lu",pnr->b_blocknr,pnr->blk_local);
 			return pnr;
 		}
+	}
 	spin_unlock_irq (&lo->cache_lock[cache_hash_func(nr)]);
 	return NULL;
 }
