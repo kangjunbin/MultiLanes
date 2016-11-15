@@ -24,7 +24,7 @@ Specifically, you should run command starting with: mount -o loop
 We also release the MultiLanes driver alone without pVFS for 3.10.103 kernel (2016/11/15).
 You can patch the MultiLanes driver code to Linux 3.10.103 (replacing the loop.c, loop.h and adding the block_cache.h) and the ext3 code modified to export ext3_get_block to fs/ext3, enable the loop driver and then compile the kernel.
 
-To run MultiLanes, you can execute the following steps:
+To run MultiLanes driver, you can execute the following steps:
 
 (1) Format the physical device with the modified ext3 file system and mount the device.
 
