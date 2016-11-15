@@ -76,6 +76,6 @@ const struct inode_operations ext3_file_inode_operations = {
 #endif
 	.get_acl	= ext3_get_acl,
 	.fiemap		= ext3_fiemap,
-	.get_block	= ext3_get_block,
+        .get_block      = ext3_get_block,
 };
 

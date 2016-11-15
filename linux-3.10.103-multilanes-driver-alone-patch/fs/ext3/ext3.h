@@ -947,7 +947,6 @@ static inline struct ext3_inode *ext3_raw_inode(struct ext3_iloc *iloc)
 	return (struct ext3_inode *) (iloc->bh->b_data + iloc->offset);
 }
 
-extern int ext3_get_block (struct inode *inode, sector_t iblock, struct buffer_head *bh_result, int create);
 /*
  * This structure is stuffed into the struct file's private_data field
  * for directories.  It is where we put information so that we can do
@@ -1045,6 +1044,8 @@ struct buffer_head * ext3_bread (handle_t *, struct inode *, int, int, int *);
 int ext3_get_blocks_handle(handle_t *handle, struct inode *inode,
 	sector_t iblock, unsigned long maxblocks, struct buffer_head *bh_result,
 	int create);
+extern int ext3_get_block(struct inode *inode, sector_t iblock,
+			struct buffer_head *bh_result, int create);
 
 extern struct inode *ext3_iget(struct super_block *, unsigned long);
 extern int  ext3_write_inode (struct inode *, struct writeback_control *);

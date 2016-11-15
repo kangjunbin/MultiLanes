@@ -27,6 +27,7 @@
 #include <linux/writeback.h>
 #include <linux/mpage.h>
 #include <linux/namei.h>
+#include <linux/aio.h>
 #include "ext3.h"
 #include "xattr.h"
 #include "acl.h"
@@ -218,7 +219,8 @@ void ext3_evict_inode (struct inode *inode)
 	 */
 	if (inode->i_nlink && ext3_should_journal_data(inode) &&
 	    EXT3_SB(inode->i_sb)->s_journal &&
-	    (S_ISLNK(inode->i_mode) || S_ISREG(inode->i_mode))) {
+	    (S_ISLNK(inode->i_mode) || S_ISREG(inode->i_mode)) &&
+	    inode->i_ino != EXT3_JOURNAL_INO) {
 		tid_t commit_tid = atomic_read(&ei->i_datasync_tid);
 		journal_t *journal = EXT3_SB(inode->i_sb)->s_journal;
 
@@ -676,6 +678,10 @@ static int ext3_alloc_branch(handle_t *handle, struct inode *inode,
 		 * parent to disk.
 		 */
 		bh = sb_getblk(inode->i_sb, new_blocks[n-1]);
+		if (unlikely(!bh)) {
+			err = -ENOMEM;
+			goto failed;
+		}
 		branch[n].bh = bh;
 		lock_buffer(bh);
 		BUFFER_TRACE(bh, "call get_create_access");
@@ -717,7 +723,7 @@ failed:
 		BUFFER_TRACE(branch[i].bh, "call journal_forget");
 		ext3_journal_forget(handle, branch[i].bh);
 	}
-	for (i = 0; i <indirect_blks; i++)
+	for (i = 0; i < indirect_blks; i++)
 		ext3_free_blocks(handle, inode, new_blocks[i], 1);
 
 	ext3_free_blocks(handle, inode, new_blocks[i], num);
@@ -1011,8 +1017,8 @@ out:
  * If we plug in 4096 for B and 256 for A (for 1KB block size), we get 25.
  */
 #define DIO_CREDITS 25
- 
- int ext3_get_block(struct inode *inode, sector_t iblock,
+
+int ext3_get_block(struct inode *inode, sector_t iblock,
 			struct buffer_head *bh_result, int create)
 {
 	handle_t *handle = ext3_journal_current_handle();
@@ -1078,8 +1084,8 @@ struct buffer_head *ext3_getblk(handle_t *handle, struct inode *inode,
 	if (!err && buffer_mapped(&dummy)) {
 		struct buffer_head *bh;
 		bh = sb_getblk(inode->i_sb, dummy.b_blocknr);
-		if (!bh) {
-			*errp = -EIO;
+		if (unlikely(!bh)) {
+			*errp = -ENOMEM;
 			goto err;
 		}
 		if (buffer_new(&dummy)) {
@@ -2729,12 +2735,12 @@ static int __ext3_get_inode_loc(struct inode *inode,
 		return -EIO;
 
 	bh = sb_getblk(inode->i_sb, block);
-	if (!bh) {
+	if (unlikely(!bh)) {
 		ext3_error (inode->i_sb, "ext3_get_inode_loc",
 				"unable to read inode block - "
 				"inode=%lu, block="E3FSBLK,
 				 inode->i_ino, block);
-		return -EIO;
+		return -ENOMEM;
 	}
 	if (!buffer_uptodate(bh)) {
 		lock_buffer(bh);
@@ -2783,7 +2789,7 @@ static int __ext3_get_inode_loc(struct inode *inode,
 
 			bitmap_bh = sb_getblk(inode->i_sb,
 					le32_to_cpu(desc->bg_inode_bitmap));
-			if (!bitmap_bh)
+			if (unlikely(!bitmap_bh))
 				goto make_io;
 
 			/*
@@ -2877,20 +2883,6 @@ void ext3_get_inode_flags(struct ext3_inode_info *ei)
 		ei->i_flags |= EXT3_NOATIME_FL;
 	if (flags & S_DIRSYNC)
 		ei->i_flags |= EXT3_DIRSYNC_FL;
-}
-
-int raw_inode (struct inode* inode, void **raw) {
-	int ret;
-	struct ext3_iloc iloc;
-
-	ret = __ext3_get_inode_loc(inode, &iloc, 0);
-	if (ret < 0) {
-		printk (KERN_EMERG "ext3_raw_inode_loop error!\n");
-		return 1;
-	}
-	
-	*raw = ext3_raw_inode(&iloc);
-	return 0;
 }
 
 struct inode *ext3_iget(struct super_block *sb, unsigned long ino)
