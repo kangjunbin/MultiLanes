@@ -631,10 +631,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		nr_total_sectors+=(bvec->bv_len>>9);
 	}
 	i=old_bio->bi_idx;
-	if(nr_total_sectors > i_size_read(inode)){
-		bio_endio(old_bio,0);
-		return 0;
-	}
+
 	
 	if((nr_total_sectors == 0)){
 		
@@ -735,8 +732,6 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			//	printk(KERN_INFO "i %d\n", i);
 				cur_page_offset = old_bio->bi_io_vec[i].bv_offset;
 				cur_page_len = old_bio->bi_io_vec[i].bv_len;
-				if(cur_page_len%512!=0)
-					printk(KERN_EMERG "cur_page_len error cur_page_len=%d start_idx=%d i=%d bi_vcnt=%d nr_total_sectors=%lu sec_nr_logical=%lu sec_nr_phys=%lu remaining_sectors=%d \n",cur_page_len,old_bio->bi_idx,i,old_bio->bi_vcnt,nr_total_sectors,sec_nr_logical,sec_nr_phys,remaining_sectors);	
 			//	printk(KERN_INFO "cur page offset %lu len %lu\n", cur_page_offset, cur_page_len);
 				i++;
 
@@ -744,10 +739,6 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			
 			to_written = remaining_sectors > (cur_page_len >> 9)? (cur_page_len >> 9):remaining_sectors;
 			
-			if(new_bio == NULL)
-				printk(KERN_INFO "bio error\n");
-			if(page == NULL)
-				printk(KERN_INFO "page error\n");
 			//printk(KERN_INFO "new_bio->bi_vcnt %d offset %ld to written %ld\n", new_bio->bi_vcnt, cur_page_offset, to_written);
 			ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
 			
