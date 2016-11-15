@@ -33,16 +33,16 @@ To run MultiLanes driver, you can execute the following steps:
 
 (1) Format the physical device with the modified ext3 file system and mount the device.
 
-    -e.g., sudo mkfs.ext3 /dev/ssd
+           sudo mkfs.ext3 /dev/ssd
            sudo mount -t ext3 /dev/ssd /multilanes/backend/
     
 (2) Create the image files on the ext3 file system and truncate the image files to the storage size you required.
 
-    -e.g., sudo truncate -s 8G /multilanes/backend/image
+           sudo truncate -s 8G /multilanes/backend/image
     
 (3) Format the image files with any file system (such as ext3/4 and xfs), and then mount the image files
 
-    -e.g., sudo mkfs.ext4 -F /multilanes/backend/image
+           sudo mkfs.ext4 -F /multilanes/backend/image
            sudo mount -o loop /multilanes/backend/imgage /vd
 
 (4) Run workloads inside the mountpoint /vd
