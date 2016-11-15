@@ -22,8 +22,24 @@ To run MultiLanes, you should first create sparse files on the host ext3 file sy
 Specifically, you should run command starting with: mount -o loop 
 
 We also release the MultiLanes driver alone without pVFS for 3.10.103 kernel (2016/11/15).
-You can patch the MultiLanes driver code to Linux 3.10.103 (replacing the loop.c, loop.h and adding the block_cache.h), enable the loop driver and then compile the kernel.
-Then, you can use MultiLanes as the way using loop as our driver is implemented based on loop.
+You can patch the MultiLanes driver code to Linux 3.10.103 (replacing the loop.c, loop.h and adding the block_cache.h) and the ext3 code modified to export ext3_get_block to fs/ext3, enable the loop driver and then compile the kernel.
+
+To run MultiLanes, you can execute the following steps:
+
+(1) Format the physical device with the modified ext3 file system and mount the device.
+
+    -e.g., sudo mkfs.ext3 /dev/ssd; sudo mount -t ext3 /dev/ssd /multilanes/backend/
+    
+(2) Create the image files on the ext3 file system and truncate the image files to the storage size you required.
+
+    -e.g., sudo truncate -s 8G /multilanes/backend/image; 
+    
+(3) Format the image files with any file system (such as ext3/4 and xfs), and then mount the image files
+
+    -e.g., sudo mkfs.ext4 -F /multilanes/backend/image; sudo mount -o loop /multilanes/backend/imgage /vd
+
+(4) Run workloads inside the mountpoint /vd
+
 
 #Authors
 Junbin Kang
