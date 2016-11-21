@@ -459,13 +459,7 @@ static void lo_end_bio (struct bio *bio, int error) {
 	spin_lock_irqsave(&head->head_lock, flags);
 	head->nr_done++;
 	
-	orig_bio = head -> orig_bio;
-	if (!error) {
-		orig_bio->bi_size -= lo_bio->size;
-		orig_bio->bi_sector += lo_bio->size >> 9;
-	}
-	//take care of the bio_pool_idx thing;
-	orig_bio->bi_flags |= (4 << bio->bi_flags) >> 4;
+	orig_bio = head->orig_bio;
 
 	if (!head->error)
 		head->error = error;	
@@ -606,7 +600,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 
 	int count, ret;
 	struct bio *new_bio = NULL;
-	int old_bio_rw;
+	unsigned long old_bio_rw;
 
 	loop_handle_bio(lo, old_bio);
 	
@@ -705,7 +699,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		
 		if(new_bio == NULL){
 
-			new_bio = bio_alloc(GFP_NOIO, old_bio->bi_vcnt);
+			new_bio = bio_alloc(GFP_NOIO, nr_total_sectors);
 			new_bio->bi_sector = sec_nr_phys;
 			new_bio->bi_bdev = bd;
 			new_bio->bi_rw = old_bio->bi_rw;
@@ -741,7 +735,11 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			
 			//printk(KERN_INFO "new_bio->bi_vcnt %d offset %ld to written %ld\n", new_bio->bi_vcnt, cur_page_offset, to_written);
 			ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
-			
+			if(unlikely(ret != to_written << 9)){
+				printk(KERN_ERR "bio add page error\n");
+				bio_endio (old_bio, -EIO);
+				return -1;
+			}
 			remaining_sectors -= to_written;
 			cur_page_offset += (to_written << 9);
 			cur_page_len -= (to_written << 9);
