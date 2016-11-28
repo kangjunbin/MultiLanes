@@ -521,8 +521,8 @@ void cio_make_request (struct loop_device *lo,sector_t blk_local,int flag,struct
 	cio->blk_num = prefetch_blocks;
 	cio->blk_local=blk_local;
 	//cio->req_num=req_num;		
-	if(cio->blk_local>100000000)
-		printk (KERN_EMERG "[CIO_MAKE_REQUEST] cio->blk_local=%lu\n",cio->blk_local);	
+//	if(cio->blk_local>100000000)
+	//	printk (KERN_EMERG "[CIO_MAKE_REQUEST] cio->blk_local=%lu\n",cio->blk_local);	
 	init_completion (&cio->allocated);
 	INIT_LIST_HEAD (&cio->list);
 
@@ -635,6 +635,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			cio.error = 0;
 			if(test_bit(LOOP_DIRTY, &(lo->lo_dirty_state))){
 				cio_make_request_flush(lo, old_bio->bi_rw, &cio);
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, -EIO);
+					return;
+				}
 				//bio_endio(old_bio, cio.error);
 		//		printk(KERN_INFO "EMPTY FLUSH REQUEST\n");
 				//return 0;
@@ -663,7 +667,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 
 		//		printk(KERN_INFO "FLUSH REQUEST\n");
 				cio_make_request_flush(lo, old_bio->bi_rw, &cio);
-				
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, -EIO);
+					return;
+				}
 		}else {
 //		printk(KERN_INFO "FLUSH REQUEST CLEAN");
 		}
@@ -682,6 +689,11 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			struct cio_req cio;
 
 			cio_make_request(lo,blk_logical,old_bio->bi_rw,&cio);
+			if(unlikely(cio.error)){
+				printk(KERN_ERR "loop translation fails\n");
+				bio_endio(old_bio, -EIO);
+				return;
+			}
 			blk_phys = cio.blk_phy;
 		}
 	
@@ -735,7 +747,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			
 			//printk(KERN_INFO "new_bio->bi_vcnt %d offset %ld to written %ld\n", new_bio->bi_vcnt, cur_page_offset, to_written);
 			ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
-			if(unlikely(ret != to_written << 9)){
+			if(unlikely(ret != (to_written << 9))){
 				printk(KERN_ERR "bio add page error\n");
 				bio_endio (old_bio, -EIO);
 				return -1;
@@ -790,6 +802,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		cio.error = 0;
 		if(test_bit(LOOP_DIRTY, &(lo->lo_dirty_state))){
 				cio_make_request_flush(lo, old_bio_rw, &cio);
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, cio.error);
+					return;
+				}
 		//		printk(KERN_INFO "FUA REQUEST\n");
 			}else{
 		//		printk(KERN_INFO "FUA REQUEST CLEAN\n");
