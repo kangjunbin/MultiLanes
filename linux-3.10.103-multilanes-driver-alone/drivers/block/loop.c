@@ -573,8 +573,8 @@ static inline void loop_handle_bio(struct loop_device *, struct bio *);
 static void sync_end_bio (struct bio *bio, int error) {
 	struct bio *orig_bio= (struct bio *)bio -> bi_private;
 
+	bio_put(bio);
 	bio_endio(orig_bio,error);
-	
 
 }
 
