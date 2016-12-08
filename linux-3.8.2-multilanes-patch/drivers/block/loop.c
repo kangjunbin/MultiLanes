@@ -102,6 +102,8 @@ static DEFINE_MUTEX(loop_index_mutex);
 static int max_part;
 static int part_shift;
 
+#define LO_ASSERT(condition)	BUG_ON(!(condition))
+
 /*
  * Transfer functions
  */
@@ -521,8 +523,8 @@ void cio_make_request (struct loop_device *lo,sector_t blk_local,int flag,struct
 	cio->blk_num = prefetch_blocks;
 	cio->blk_local=blk_local;
 	//cio->req_num=req_num;		
-	if(cio->blk_local>100000000)
-		printk (KERN_EMERG "[CIO_MAKE_REQUEST] cio->blk_local=%lu\n",cio->blk_local);	
+//	if(cio->blk_local>100000000)
+	//	printk (KERN_EMERG "[CIO_MAKE_REQUEST] cio->blk_local=%lu\n",cio->blk_local);	
 	init_completion (&cio->allocated);
 	INIT_LIST_HEAD (&cio->list);
 
@@ -573,9 +575,26 @@ static inline void loop_handle_bio(struct loop_device *, struct bio *);
 static void sync_end_bio (struct bio *bio, int error) {
 	struct bio *orig_bio= (struct bio *)bio -> bi_private;
 
+	bio_put(bio);
 	bio_endio(orig_bio,error);
-	
 
+}
+
+static inline struct bio * lo_new_bio(struct block_device *bd, sector_t start_sector, unsigned int nr_segs, unsigned long rw)
+{
+	int nr_pages = min(nr_segs, BIO_MAX_PAGES);
+	struct bio *new_bio;
+	
+	new_bio = bio_alloc(GFP_NOIO, nr_pages);
+	if(unlikely(new_bio == NULL)){
+		printk(KERN_ERR "allocating bios for %d pages fails\n", nr_pages);
+		return NULL;	
+	}
+	new_bio->bi_sector = start_sector;
+	new_bio->bi_bdev = bd;
+	new_bio->bi_rw = rw;
+	new_bio->bi_end_io = lo_end_bio;
+	return new_bio;
 }
 
 static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
@@ -635,6 +654,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			cio.error = 0;
 			if(test_bit(LOOP_DIRTY, &(lo->lo_dirty_state))){
 				cio_make_request_flush(lo, old_bio->bi_rw, &cio);
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, -EIO);
+					return;
+				}
 				//bio_endio(old_bio, cio.error);
 		//		printk(KERN_INFO "EMPTY FLUSH REQUEST\n");
 				//return 0;
@@ -663,7 +686,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 
 		//		printk(KERN_INFO "FLUSH REQUEST\n");
 				cio_make_request_flush(lo, old_bio->bi_rw, &cio);
-				
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, -EIO);
+					return;
+				}
 		}else {
 //		printk(KERN_INFO "FLUSH REQUEST CLEAN");
 		}
@@ -682,6 +708,11 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			struct cio_req cio;
 
 			cio_make_request(lo,blk_logical,old_bio->bi_rw,&cio);
+			if(unlikely(cio.error)){
+				printk(KERN_ERR "loop translation fails\n");
+				bio_endio(old_bio, -EIO);
+				return;
+			}
 			blk_phys = cio.blk_phy;
 		}
 	
@@ -698,11 +729,11 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		}
 		
 		if(new_bio == NULL){
-
-			new_bio = bio_alloc(GFP_NOIO, nr_total_sectors);
-			new_bio->bi_sector = sec_nr_phys;
-			new_bio->bi_bdev = bd;
-			new_bio->bi_rw = old_bio->bi_rw;
+			new_bio = lo_new_bio(bd, sec_nr_phys, old_bio->bi_vcnt, old_bio->bi_rw);
+			if(unlikely(!new_bio)){
+					bio_endio(old_bio, -ENOMEM);
+					return -ENOMEM;
+			}
 		}
 
 		count++;
@@ -735,10 +766,15 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			
 			//printk(KERN_INFO "new_bio->bi_vcnt %d offset %ld to written %ld\n", new_bio->bi_vcnt, cur_page_offset, to_written);
 			ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
-			if(unlikely(ret != to_written << 9)){
-				printk(KERN_ERR "bio add page error\n");
-				bio_endio (old_bio, -EIO);
-				return -1;
+			if(unlikely(ret != (to_written << 9))){
+				lo_send_bio(head, new_bio);
+				new_bio = lo_new_bio(bd, sec_nr_phys, old_bio->bi_vcnt, old_bio->bi_rw);
+				if(unlikely(!new_bio)){
+					bio_endio(old_bio, -ENOMEM);
+					return -ENOMEM;
+				}
+				ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
+				LO_ASSERT(ret == (to_written << 9));
 			}
 			remaining_sectors -= to_written;
 			cur_page_offset += (to_written << 9);
@@ -790,6 +826,10 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		cio.error = 0;
 		if(test_bit(LOOP_DIRTY, &(lo->lo_dirty_state))){
 				cio_make_request_flush(lo, old_bio_rw, &cio);
+				if(unlikely(cio.error)){
+					bio_endio(old_bio, cio.error);
+					return;
+				}
 		//		printk(KERN_INFO "FUA REQUEST\n");
 			}else{
 		//		printk(KERN_INFO "FUA REQUEST CLEAN\n");
