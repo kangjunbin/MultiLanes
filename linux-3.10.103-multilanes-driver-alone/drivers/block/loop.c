@@ -102,6 +102,8 @@ static DEFINE_MUTEX(loop_index_mutex);
 static int max_part;
 static int part_shift;
 
+#define LO_ASSERT(condition)	BUG_ON(!(condition))
+
 /*
  * Transfer functions
  */
@@ -578,6 +580,23 @@ static void sync_end_bio (struct bio *bio, int error) {
 
 }
 
+static inline struct bio * lo_new_bio(struct block_device *bd, sector_t start_sector, unsigned int nr_segs, unsigned long rw)
+{
+	int nr_pages = min(nr_segs, BIO_MAX_PAGES);
+	struct bio *new_bio;
+	
+	new_bio = bio_alloc(GFP_NOIO, nr_pages);
+	if(unlikely(new_bio == NULL)){
+		printk(KERN_ERR "allocating bios for %d pages fails\n", nr_pages);
+		return NULL;	
+	}
+	new_bio->bi_sector = start_sector;
+	new_bio->bi_bdev = bd;
+	new_bio->bi_rw = rw;
+	new_bio->bi_end_io = lo_end_bio;
+	return new_bio;
+}
+
 static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 
 	int i;
@@ -710,11 +729,11 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 		}
 		
 		if(new_bio == NULL){
-
-			new_bio = bio_alloc(GFP_NOIO, nr_total_sectors);
-			new_bio->bi_sector = sec_nr_phys;
-			new_bio->bi_bdev = bd;
-			new_bio->bi_rw = old_bio->bi_rw;
+			new_bio = lo_new_bio(bd, sec_nr_phys, old_bio->bi_vcnt, old_bio->bi_rw);
+			if(unlikely(!new_bio)){
+					bio_endio(old_bio, -ENOMEM);
+					return -ENOMEM;
+			}
 		}
 
 		count++;
@@ -748,9 +767,14 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 			//printk(KERN_INFO "new_bio->bi_vcnt %d offset %ld to written %ld\n", new_bio->bi_vcnt, cur_page_offset, to_written);
 			ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
 			if(unlikely(ret != (to_written << 9))){
-				printk(KERN_ERR "bio add page error\n");
-				bio_endio (old_bio, -EIO);
-				return -1;
+				lo_send_bio(head, new_bio);
+				new_bio = lo_new_bio(bd, sec_nr_phys, old_bio->bi_vcnt, old_bio->bi_rw);
+				if(unlikely(!new_bio)){
+					bio_endio(old_bio, -ENOMEM);
+					return -ENOMEM;
+				}
+				ret = bio_add_page(new_bio, page, (to_written << 9), cur_page_offset);
+				LO_ASSERT(ret == (to_written << 9));
 			}
 			remaining_sectors -= to_written;
 			cur_page_offset += (to_written << 9);
