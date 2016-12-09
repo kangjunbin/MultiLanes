@@ -22,6 +22,42 @@ For more details, please refer to our FAST conference paper [MultiLanes: Providi
 for OS-level Virtualization on Many Cores](https://www.usenix.org/system/files/conference/fast14/fast14-paper_kang.pdf)<bf /> and ACM TOS article [MultiLanes: Providing Virtualized Storage
 for OS-level Virtualization on Many Cores](http://dl.acm.org/citation.cfm?id=2801155&dl=ACM).
 
+If you use our work, please cite our USENIX FAST paper and ACM TOS article.
+
+@inproceedings{multilanes,
+
+  title={MultiLanes: providing virtualized storage for OS-level virtualization on many cores},
+  
+  author={Kang, Junbin and Zhang, Benlong and Wo, Tianyu and Hu, Chunming and Huai, Jinpeng},
+  
+  booktitle={Proceedings of the 12th USENIX Conference on File and Storage Technologies (FAST 14)},
+  
+  pages={317--329},
+  
+  year={2014}
+  
+}
+
+@article{kang2016multilanes,
+
+title={MultiLanes: Providing Virtualized Storage for OS-Level Virtualization on Manycores},
+
+author={Kang, Junbin and Hu, Chunming and Wo, Tianyu and Zhai, Ye and Zhang, Benlong and Huai, Jinpeng},
+
+journal={ACM Transactions on Storage},
+
+volume={12},
+
+number={3},
+
+pages={317--329},
+
+year={2016}
+
+}
+    
+
+
 #How to run MultiLanes
 To run MultiLanes, you should first create sparse files on the host ext3 file system, truncate these files to the predefined size, and then mount the virtualized devices of MultiLanes in the same way how the loop driver works (Our driver is implemented based on loop).
 Specifically, you should run command starting with: mount -o loop 
