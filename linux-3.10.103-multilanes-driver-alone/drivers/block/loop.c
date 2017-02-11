@@ -688,7 +688,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 				cio_make_request_flush(lo, old_bio->bi_rw, &cio);
 				if(unlikely(cio.error)){
 					bio_endio(old_bio, -EIO);
-					return;
+					return cio.error;
 				}
 		}else {
 //		printk(KERN_INFO "FLUSH REQUEST CLEAN");
@@ -828,7 +828,7 @@ static int redirect_bio (struct loop_device *lo, struct bio *old_bio) {
 				cio_make_request_flush(lo, old_bio_rw, &cio);
 				if(unlikely(cio.error)){
 					bio_endio(old_bio, cio.error);
-					return;
+					return cio.error;
 				}
 		//		printk(KERN_INFO "FUA REQUEST\n");
 			}else{
