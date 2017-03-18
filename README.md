@@ -58,7 +58,7 @@ year={2016}
     
 
 
-#How to run MultiLanes
+# How to run MultiLanes
 To run MultiLanes, you should first create sparse files on the host ext3 file system, truncate these files to the predefined size, and then mount the virtualized devices of MultiLanes in the same way how the loop driver works (Our driver is implemented based on loop).
 Specifically, you should run command starting with: mount -o loop 
 
@@ -85,7 +85,7 @@ To run MultiLanes driver, you can execute the following steps:
 (4) Run workloads inside the mountpoint /vd
 
 
-#Authors
+# Authors
 Junbin Kang
 
 Benlong Zhang
